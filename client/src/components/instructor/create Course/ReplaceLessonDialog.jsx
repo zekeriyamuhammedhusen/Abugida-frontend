@@ -26,7 +26,7 @@ import {
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div
-              className="border rounded-md p-4 hover:border-fidel-500 cursor-pointer transition-all"
+              className="border rounded-md p-4 hover:border-abugida-500 cursor-pointer transition-all"
               onClick={handleReplaceLessonWithVideo}
             >
               <Video size={24} className="mx-auto mb-2 text-fidel-500" />
@@ -36,7 +36,7 @@ import {
               </p>
             </div>
             <div
-              className="border rounded-md p-4 hover:border-fidel-500 cursor-pointer transition-all"
+              className="border rounded-md p-4 hover:border-abugida-500 cursor-pointer transition-all"
               onClick={handleReplaceWithQuiz}
             >
               <BarChart size={24} className="mx-auto mb-2 text-fidel-500" />

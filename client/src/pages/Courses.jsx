@@ -4,7 +4,7 @@ import CourseCard from "@/components/home/CourseCard";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import axios from "axios";
+import api from "@/lib/api";
 
 const categories = [
   "All",
@@ -42,11 +42,8 @@ const Courses = () => {
     setError(null);
     try {
       // Fetch active courses only
-      const response = await fetch("http://localhost:5000/api/courses/active");
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const courseData = await response.json();
+      const response = await api.get('/api/courses/active');
+      const courseData = response.data;
 
       // Fetch review stats and student count for each course
       const coursesWithData = await Promise.all(
@@ -57,16 +54,8 @@ const Courses = () => {
           let studentCount = 0;
 
           // Fetch review stats
-          try {
-            const reviewResponse = await axios.get(
-              `http://localhost:5000/api/review/${courseId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-                withCredentials: true,
-              }
-            );
+            try {
+            const reviewResponse = await api.get(`/api/review/${courseId}`);
             avgRating = reviewResponse.data.reviewStats?.avgRating || "N/A";
             totalReviews = reviewResponse.data.reviewStats?.totalReviews || 0;
           } catch (error) {
@@ -74,16 +63,8 @@ const Courses = () => {
           }
 
           // Fetch student count
-          try {
-            const studentResponse = await axios.get(
-              `http://localhost:5000/api/courses/${courseId}/student-count`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-                withCredentials: true,
-              }
-            );
+            try {
+            const studentResponse = await api.get(`/api/courses/${courseId}/student-count`);
             studentCount = studentResponse.data.studentCount || 0;
           } catch (error) {
             console.error(`Failed to fetch student count for course ${courseId}:`, error);
@@ -152,7 +133,7 @@ const Courses = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-fidel-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-abugida-500"></div>
       </div>
     );
   }

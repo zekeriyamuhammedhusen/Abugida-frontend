@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import Login from "./pages/Login";
@@ -22,6 +23,7 @@ import {
   listenForForceLogout,
   disconnectSocket,
 } from "./socket";
+import RequireAdmin from "./components/auth/RequireAdmin";
 import ForgotPassword from "./pages/ForgotPassword";
 import OTPVerification from "./pages/OTPVerification";
 import OTPSend from "./pages/OTPSend";
@@ -42,22 +44,19 @@ const MainLayout = ({ children }) => (
 
 const App = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
+    // Scroll to top on route load
     window.scroll(0, 0);
 
-    if (token && userId) {
-      // Connect socket and register user
-      connectSocket(userId);
+    // If we have a logged-in user, connect the socket and register
+    if (user && user._id) {
+      connectSocket(user._id);
 
-      // Listen for force logout events (like when admin blocks user)
       listenForForceLogout((data) => {
         toast.error(data.message || "You have been logged out");
-        localStorage.removeItem("token");
-        localStorage.removeItem("userId");
-
+        // logout flow handled by AuthContext; navigate to login
         if (data.reason === "blocked") {
           navigate("/login?blocked=true", { replace: true });
         } else {
@@ -70,7 +69,7 @@ const App = () => {
     return () => {
       disconnectSocket();
     };
-  }, [navigate]);
+  }, [navigate, user]);
 
   return (
     <>
@@ -202,7 +201,14 @@ const App = () => {
         {/* Protected routes without layout */}
         <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/instructor-dashboard" element={<InstructorDashboard />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route
+          path="/admin-dashboard"
+          element={
+            <RequireAdmin>
+              <AdminDashboard />
+            </RequireAdmin>
+          }
+        />
         <Route path="/profile" element={<Profile />} />
         <Route path="/users/:userId" element={<UserDetails />} />
       </Routes>

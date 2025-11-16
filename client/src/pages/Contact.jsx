@@ -94,8 +94,8 @@ function Contact() {
     <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900">
       <div className="flex-1 pt-24 pb-12">
         {/* Hero section */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-fidel-500 to-fidel-700 py-20 md:py-28">
-          <div className="absolute -top-40 -left-40 w-80 h-80 bg-fidel-100 dark:bg-fidel-950/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
+        <div className="relative overflow-hidden bg-gradient-to-r from-abugida-500 to-abugida-700 py-20 md:py-28">
+          <div className="absolute -top-40 -left-40 w-80 h-80 bg-abugida-100 dark:bg-abugida-950/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
           <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-slate-100 dark:bg-slate-800/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
 
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
@@ -139,23 +139,23 @@ function Contact() {
 
               <div className="space-y-6">
                 <div className="flex items-start space-x-4">
-                  <div className="bg-fidel-50 dark:bg-fidel-950/20 p-3 rounded-full">
-                    <Mail className="h-6 w-6 text-fidel-500" />
+                  <div className="bg-abugida-50 dark:bg-abugida-950/20 p-3 rounded-full">
+                    <Mail className="h-6 w-6 text-abugida-500" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                       Email
                     </h3>
-                    <p className="text-muted-foreground">info@fidelhub.edu</p>
+                    <p className="text-muted-foreground">info@abugida.edu</p>
                     <p className="text-muted-foreground">
-                      support@fidelhub.edu
+                      support@abugida.edu
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="bg-fidel-50 dark:bg-fidel-950/20 p-3 rounded-full">
-                    <Phone className="h-6 w-6 text-fidel-500" />
+                  <div className="bg-abugida-50 dark:bg-abugida-950/20 p-3 rounded-full">
+                    <Phone className="h-6 w-6 text-abugida-500" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -167,8 +167,8 @@ function Contact() {
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="bg-fidel-50 dark:bg-fidel-950/20 p-3 rounded-full">
-                    <MapPin className="h-6 w-6 text-fidel-500" />
+                  <div className="bg-abugida-50 dark:bg-abugida-950/20 p-3 rounded-full">
+                    <MapPin className="h-6 w-6 text-abugida-500" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -184,8 +184,8 @@ function Contact() {
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="bg-fidel-50 dark:bg-fidel-950/20 p-3 rounded-full">
-                    <Clock className="h-6 w-6 text-fidel-500" />
+                  <div className="bg-abugida-50 dark:bg-abugida-950/20 p-3 rounded-full">
+                    <Clock className="h-6 w-6 text-abugida-500" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -352,7 +352,7 @@ function Contact() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-fidel-500 hover:bg-fidel-600 text-white"
+                  className="w-full bg-abugida-500 hover:bg-abugida-600 text-white"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -404,8 +404,8 @@ function Contact() {
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
                 Frequently Asked Questions
               </h2>
-              <p className="text-muted-foreground max-w-3xl mx-auto">
-                Find quick answers to common questions about Fidel Hub.
+                <p className="text-muted-foreground max-w-3xl mx-auto">
+                Find quick answers to common questions about Abugida.
               </p>
             </motion.div>
 
@@ -415,15 +415,15 @@ function Contact() {
                   key={index}
                   className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm"
                 >
-                  <button
-                    onClick={() => toggle(index)}
-                    className="flex justify-between items-center w-full text-left text-lg font-semibold text-slate-900 dark:text-white"
+                  <Button
+                    type="submit"
+                    className="w-full bg-abugida-500 hover:bg-abugida-600 text-white"
                   >
                     {faq.question}
                     <span className="ml-2 text-xl">
                       {openIndex === index ? "−" : "+"}
                     </span>
-                  </button>
+                  </Button>
 
                   <AnimatePresence>
                     {openIndex === index && (

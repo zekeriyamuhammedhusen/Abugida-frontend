@@ -184,7 +184,7 @@ export const OverviewTab = () => {
                       <span className="text-muted-foreground">
                         {progressMap[course._id]?.progressPercentage || 0}% complete
                       </span>
-                      <span className="font-medium text-fidel-500">Continue</span>
+                      <span className="font-medium text-abugida-500">Continue</span>
                     </div>
                   </div>
                 </div>

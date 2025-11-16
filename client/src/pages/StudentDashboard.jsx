@@ -92,7 +92,7 @@ const StudentDashboard = () => {
               onClick={() => handleNavItemClick(item.id)}
               className={`flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium ${
                 activeTab === item.id
-                  ? "bg-fidel-50 text-fidel-600 dark:bg-slate-800 dark:text-fidel-400"
+                  ? "bg-abugida-50 text-abugida-600 dark:bg-slate-800 dark:text-abugida-400"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -104,7 +104,7 @@ const StudentDashboard = () => {
 
         <div className="absolute bottom-5 left-5 right-5">
           <div className="flex items-center space-x-2 p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
-            <div className="h-8 w-8 rounded-full bg-fidel-100 dark:bg-fidel-900/30 flex items-center justify-center text-fidel-600 dark:text-fidel-400 font-medium">
+            <div className="h-8 w-8 rounded-full bg-abugida-100 dark:bg-abugida-900/30 flex items-center justify-center text-abugida-600 dark:text-abugida-400 font-medium">
               {user?.name
                 ? user.name
                     .split(" ")
@@ -127,7 +127,7 @@ const StudentDashboard = () => {
 
       {/* Sidebar toggle button */}
       <button
-        className="fixed top-5 left-5 z-50 md:hidden p-2 rounded-full bg-fidel-500 text-white"
+        className="fixed top-5 left-5 z-50 md:hidden p-2 rounded-full bg-abugida-500 text-white"
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
       >
         <Menu size={20} />

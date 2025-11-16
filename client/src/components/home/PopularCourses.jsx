@@ -130,7 +130,7 @@ const PopularCourses = () => {
     return (
       <section className="py-20 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-6 md:px-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-fidel-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-abugida-500 mx-auto"></div>
         </div>
       </section>
     );

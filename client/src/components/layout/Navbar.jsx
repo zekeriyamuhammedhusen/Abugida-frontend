@@ -80,12 +80,12 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link
           to="/"
-          className="text-2xl font-display font-bold text-fidel-900 dark:text-white flex items-center"
+          className="text-2xl font-display font-bold text-abugida-900 dark:text-white flex items-center"
         >
-          <span className="bg-fidel-500 text-white h-8 w-8 rounded-lg flex items-center justify-center mr-2 shadow-lg">
+          <span className="bg-abugida-500 text-white h-8 w-8 rounded-lg flex items-center justify-center mr-2 shadow-lg">
             F
           </span>
-          Fidel<span className="text-fidel-500">Hub</span>
+          Abugida
         </Link>
 
         {/* Desktop Navigation */}
@@ -185,7 +185,7 @@ const Navbar = () => {
               </Link>
               <Link to="/signup">
                 <Button
-                  className="bg-fidel-500 hover:bg-fidel-600 text-white shadow-sm hover:shadow-md transition-all duration-200"
+                  className="bg-abugida-500 hover:bg-abugida-600 text-white shadow-sm hover:shadow-md transition-all duration-200"
                   size="sm"
                 >
                   Sign up

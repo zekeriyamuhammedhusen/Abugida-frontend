@@ -51,7 +51,7 @@ export const OverviewTab = ({ course, total }) => {
       const res = await axios.post(
         "http://localhost:5000/api/payment/initiate",
         {
-          amount: course.price,
+          amount: String(course.price),
           courseId: course._id,
           email: user.email,
           fullName: user.name,
@@ -69,7 +69,7 @@ export const OverviewTab = ({ course, total }) => {
       }
     } catch (error) {
       console.error("Enrollment error:", error?.response?.data || error.message);
-      alert("Enrollment failed: " + (error?.response?.data?.message || "Unknown error"));
+     alert("Enrollment failed: " + (error?.response?.data?.error || "Unknown error"));
     } finally {
       setLoading(false);
     }

@@ -177,7 +177,7 @@ const Signup = () => {
       {/* Your existing UI components */}
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background decorations */}
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-fidel-100 dark:bg-fidel-950/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-abugida-100 dark:bg-abugida-950/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
         <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-slate-100 dark:bg-slate-800/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
 
         <div className="w-full max-w-md space-y-8">
@@ -314,7 +314,7 @@ const Signup = () => {
                     <div className="relative">
                       <label
                         htmlFor="cv-upload"
-                        className="flex flex-col items-center justify-center w-full glass-input p-4 border-2 border-dashed rounded-lg cursor-pointer hover:border-fidel-500 transition-colors"
+                        className="flex flex-col items-center justify-center w-full glass-input p-4 border-2 border-dashed rounded-lg cursor-pointer hover:border-abugida-500 transition-colors"
                       >
                         <div className="flex items-center">
                           <Upload className="w-5 h-5 mr-2 text-muted-foreground" />
@@ -403,7 +403,7 @@ const Signup = () => {
               <div className="pt-2">
                 <Button
                   type="submit"
-                  className="w-full bg-fidel-500 hover:bg-fidel-600 text-white"
+                  className="w-full bg-abugida-500 hover:bg-abugida-600 text-white"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -429,7 +429,7 @@ const Signup = () => {
             Already have an account?{" "}
             <Link
               to="/login"
-              className="text-fidel-600 hover:text-fidel-500 font-medium"
+              className="text-abugida-600 hover:text-abugida-500 font-medium"
             >
               Sign in
             </Link>

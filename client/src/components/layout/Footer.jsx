@@ -21,26 +21,26 @@ const Footer = () => {
               to="/" 
               className="text-2xl font-display font-bold text-slate-900 dark:text-white flex items-center"
             >
-              <span className="bg-fidel-500 text-white h-8 w-8 rounded-lg flex items-center justify-center mr-2 shadow-lg">F</span>
-              Fidel<span className="text-fidel-500">Hub</span>
+              <span className="bg-abugida-500 text-white h-8 w-8 rounded-lg flex items-center justify-center mr-2 shadow-lg">F</span>
+              Abugida
             </Link>
             <p className="mt-4 text-muted-foreground text-sm">
               A modern, interactive learning platform designed to enhance the education experience for students.
             </p>
             <div className="mt-6 flex space-x-4">
-              <a href="#" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200">
+              <a href="#" className="text-muted-foreground hover:text-abugida-500 transition-colors duration-200">
                 <Facebook size={20} />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200">
+              <a href="#" className="text-muted-foreground hover:text-abugida-500 transition-colors duration-200">
                 <Twitter size={20} />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200">
+              <a href="#" className="text-muted-foreground hover:text-abugida-500 transition-colors duration-200">
                 <Instagram size={20} />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200">
+              <a href="#" className="text-muted-foreground hover:text-abugida-500 transition-colors duration-200">
                 <Linkedin size={20} />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200">
+              <a href="#" className="text-muted-foreground hover:text-abugida-500 transition-colors duration-200">
                 <Github size={20} />
               </a>
             </div>
@@ -50,22 +50,22 @@ const Footer = () => {
             <h3 className="text-base font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200 text-sm">
+                <Link to="/" className="text-muted-foreground hover:text-abugida-500 transition-colors duration-200 text-sm">
                   Home
                 </Link>
               </li>
               <li>
-                <Link to="/courses" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200 text-sm">
+                <Link to="/courses" className="text-muted-foreground hover:text-abugida-500 transition-colors duration-200 text-sm">
                   Courses
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200 text-sm">
+                <Link to="/about" className="text-muted-foreground hover:text-abugida-500 transition-colors duration-200 text-sm">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200 text-sm">
+                <Link to="/contact" className="text-muted-foreground hover:text-abugida-500 transition-colors duration-200 text-sm">
                   Contact
                 </Link>
               </li>
@@ -94,7 +94,7 @@ const Footer = () => {
             <address className="not-italic text-sm text-muted-foreground">
             <p>123 Kombolcha Street</p>
             <p>Kombolcha, Ethiopia</p>
-            <p class="mt-2">Email: info@fidelhub.edu</p>
+            <p className="mt-2">Email: info@abugida.edu</p>
             <p>Phone: +251 33 123 4567</p>
 
             </address>
@@ -103,16 +103,16 @@ const Footer = () => {
         
         <div className="border-t border-slate-200 dark:border-slate-800 mt-10 pt-6 flex flex-col md:flex-row items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Fidel Hub. All rights reserved.
+            © {new Date().getFullYear()} Abugida. All rights reserved.
           </p>
           <div className="mt-4 md:mt-0 flex space-x-6">
-            <Link to="/terms" className="text-sm text-muted-foreground hover:text-fidel-500 transition-colors duration-200">
+            <Link to="/terms" className="text-sm text-muted-foreground hover:text-abugida-500 transition-colors duration-200">
               Terms of Service
             </Link>
-            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-fidel-500 transition-colors duration-200">
+            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-abugida-500 transition-colors duration-200">
               Privacy Policy
             </Link>
-            <Link to="/cookies" className="text-sm text-muted-foreground hover:text-fidel-500 transition-colors duration-200">
+            <Link to="/cookies" className="text-sm text-muted-foreground hover:text-abugida-500 transition-colors duration-200">
               Cookies Policy
             </Link>
           </div>

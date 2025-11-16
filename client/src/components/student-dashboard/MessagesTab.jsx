@@ -564,7 +564,7 @@ const handleEdit = (messageId, newText) => {
                                 </button>
                                 <button
                                   onClick={handleUpdateMessage}
-                                  className="px-2 py-1 text-xs rounded bg-white hover:bg-white/90 text-fidel-500"
+                                  className="px-2 py-1 text-xs rounded bg-white hover:bg-white/90 text-abugida-500"
                                 >
                                   Save
                                 </button>
@@ -595,7 +595,7 @@ const handleEdit = (messageId, newText) => {
                             <div className="flex gap-2 mt-1">
                               <button
                                 onClick={() => handleEditMessage(msg)}
-                                className="text-slate-500 hover:text-fidel-500 transition-colors"
+                                className="text-slate-500 hover:text-abugida-500 transition-colors"
                                 title="Edit"
                               >
                                 <Edit size={14} />
@@ -639,8 +639,8 @@ const handleEdit = (messageId, newText) => {
                     className={cn(
                       "p-2 rounded-full transition-colors",
                       file
-                        ? "text-fidel-500"
-                        : "text-slate-500 hover:text-fidel-500"
+                        ? "text-abugida-500"
+                        : "text-slate-500 hover:text-abugida-500"
                     )}
                   >
                     <Paperclip />

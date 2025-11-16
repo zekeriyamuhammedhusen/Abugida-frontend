@@ -249,8 +249,8 @@ const MultipleChoiceQuiz = ({
                 <div
                   key={question.id}
                   className={`p-3 border rounded-md cursor-pointer ${
-                    activeQuestion === question.id
-                      ? "border-fidel-500 bg-fidel-50 dark:bg-slate-800"
+                      activeQuestion === question.id
+                        ? "border-abugida-500 bg-abugida-50 dark:bg-slate-800"
                       : "hover:bg-slate-50 dark:hover:bg-slate-800"
                   }`}
                   onClick={() => setActiveQuestion(question.id)}

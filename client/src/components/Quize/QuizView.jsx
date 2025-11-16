@@ -207,7 +207,7 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
   if (enrollmentLoading || isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-fidel-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-abugida-500" />
         <p className="text-sm text-muted-foreground">Loading quiz questions...</p>
       </div>
     );
@@ -242,7 +242,7 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
               <div className="flex items-start mb-3 sm:mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 sm:gap-3">
-                    <span className="bg-fidel-100 text-fidel-700 dark:bg-fidel-900 dark:text-fidel-100 rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm font-medium flex-shrink-0">
+                    <span className="bg-abugida-100 text-abugida-700 dark:bg-abugida-900 dark:text-abugida-100 rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm font-medium flex-shrink-0">
                       {qIndex + 1}
                     </span>
                     <h4 className="font-medium text-base sm:text-lg">{question.question}</h4>
@@ -364,11 +364,11 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
             )}
           </Button>
         ) : (
-          <div className="space-y-3 sm:space-y-4">
-            <div className="p-4 sm:p-6 bg-fidel-50 dark:bg-fidel-900/10 rounded-lg border border-fidel-100 dark:border-fidel-900/20">
+            <div className="space-y-3 sm:space-y-4">
+            <div className="p-4 sm:p-6 bg-abugida-50 dark:bg-abugida-900/10 rounded-lg border border-abugida-100 dark:border-abugida-900/20">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
                 <div className="flex-1">
-                  <h3 className="font-medium text-fidel-800 dark:text-fidel-200 mb-1 text-base sm:text-lg">
+                  <h3 className="font-medium text-abugida-800 dark:text-abugida-200 mb-1 text-base sm:text-lg">
                     Quiz Results
                   </h3>
                   <p className="text-muted-foreground text-sm sm:text-base">
@@ -448,7 +448,7 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
                 }}
                 className={`h-10 sm:h-12 text-base sm:text-lg ${
                   score >= 50
-                    ? "bg-fidel-600 hover:bg-fidel-700"
+                    ? "bg-abugida-600 hover:bg-abugida-700"
                     : "bg-gray-600 hover:bg-gray-700"
                 }`}
               >

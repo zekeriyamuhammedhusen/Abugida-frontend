@@ -14,10 +14,12 @@ const CreateCourse = () => {
     technicalRequirements: '',
     modules: []
   });
+
   const [files, setFiles] = useState({
-    courseImage: null,
+    thumbnail: null,       // FIXED → uses backend expected name
     lessonVideos: []
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,48 +45,49 @@ const CreateCourse = () => {
   };
 
   const updateModule = (index, field, value) => {
-    const updatedModules = [...course.modules];
-    updatedModules[index][field] = value;
-    setCourse(prev => ({ ...prev, modules: updatedModules }));
+    const updated = [...course.modules];
+    updated[index][field] = value;
+    setCourse(prev => ({ ...prev, modules: updated }));
   };
 
   const addLesson = (moduleIndex, type) => {
-    const updatedModules = [...course.modules];
-    updatedModules[moduleIndex].lessons.push({
+    const updated = [...course.modules];
+    updated[moduleIndex].lessons.push({
       title: '',
       lessonType: type,
       description: '',
       duration: 0,
       ...(type === 'quiz' ? { quizQuestions: [] } : {})
     });
-    setCourse(prev => ({ ...prev, modules: updatedModules }));
+    setCourse(prev => ({ ...prev, modules: updated }));
   };
 
-  const updateLesson = (moduleIndex, lessonIndex, field, value) => {
-    const updatedModules = [...course.modules];
-    updatedModules[moduleIndex].lessons[lessonIndex][field] = value;
-    setCourse(prev => ({ ...prev, modules: updatedModules }));
+  const updateLesson = (m, l, field, value) => {
+    const updated = [...course.modules];
+    updated[m].lessons[l][field] = value;
+    setCourse(prev => ({ ...prev, modules: updated }));
   };
 
-  const addQuizQuestion = (moduleIndex, lessonIndex) => {
-    const updatedModules = [...course.modules];
-    updatedModules[moduleIndex].lessons[lessonIndex].quizQuestions.push({
+  const addQuizQuestion = (m, l) => {
+    const updated = [...course.modules];
+    updated[m].lessons[l].quizQuestions.push({
       question: '',
       options: ['', '', ''],
       correctAnswer: 0
     });
-    setCourse(prev => ({ ...prev, modules: updatedModules }));
+    setCourse(prev => ({ ...prev, modules: updated }));
   };
 
-  const updateQuizQuestion = (moduleIndex, lessonIndex, questionIndex, field, value) => {
-    const updatedModules = [...course.modules];
+  const updateQuizQuestion = (m, l, q, field, value) => {
+    const updated = [...course.modules];
+
     if (field === 'options') {
-      const optionIndex = value.optionIndex;
-      updatedModules[moduleIndex].lessons[lessonIndex].quizQuestions[questionIndex].options[optionIndex] = value.value;
+      updated[m].lessons[l].quizQuestions[q].options[value.optionIndex] = value.value;
     } else {
-      updatedModules[moduleIndex].lessons[lessonIndex].quizQuestions[questionIndex][field] = value;
+      updated[m].lessons[l].quizQuestions[q][field] = value;
     }
-    setCourse(prev => ({ ...prev, modules: updatedModules }));
+
+    setCourse(prev => ({ ...prev, modules: updated }));
   };
 
   const handleSubmit = async (e) => {
@@ -94,8 +97,8 @@ const CreateCourse = () => {
 
     try {
       const formData = new FormData();
-      
-      // Add course data
+
+      // Course data
       formData.append('title', course.title);
       formData.append('description', course.description);
       formData.append('category', course.category);
@@ -104,27 +107,31 @@ const CreateCourse = () => {
       formData.append('prerequisites', course.prerequisites);
       formData.append('technicalRequirements', course.technicalRequirements);
       formData.append('modules', JSON.stringify(course.modules));
-      
-      // Add files
-      if (files.courseImage) {
-        formData.append('courseImage', files.courseImage[0]);
-      }
-      
-      if (files.lessonVideos) {
-        Array.from(files.lessonVideos).forEach(file => {
-          formData.append('lessonVideo', file);
-        });
+
+      // FIXED: Thumbnail upload
+      if (files.thumbnail) {
+        formData.append('thumbnail', files.thumbnail[0]);
       }
 
-      const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:5000/api/courses/create-course', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
+      // Lesson videos
+      if (files.lessonVideos?.length > 0) {
+        Array.from(files.lessonVideos).forEach(video =>
+          formData.append('lessonVideo', video)
+        );
+      }
+      const res = await axios.post(
+        'http://localhost:5000/api/courses',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          }
         }
-      });
+      );
 
-      navigate(`/courses/${response.data.course._id}`);
+
+      navigate(`/courses/${res.data.course._id}`);
     } catch (err) {
       console.error('Course creation failed:', err);
       setError(err.response?.data?.message || 'Failed to create course');
@@ -136,266 +143,253 @@ const CreateCourse = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Create New Course</h1>
-      
-      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
-      
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Course Info */}
+
+        {/* Basic info */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">Course Information</h2>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
             <div>
-              <label className="block text-sm font-medium text-gray-700">Title*</label>
+              <label className="block text-sm font-medium">Title*</label>
               <input
                 type="text"
                 name="title"
                 value={course.title}
                 onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 required
+                className="mt-1 w-full border rounded-md p-2"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700">Category*</label>
+              <label className="block text-sm font-medium">Category*</label>
               <input
                 type="text"
                 name="category"
                 value={course.category}
                 onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 required
+                className="mt-1 w-full border rounded-md p-2"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700">Level</label>
+              <label className="block text-sm font-medium">Level</label>
               <select
                 name="level"
                 value={course.level}
                 onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 w-full border rounded-md p-2"
               >
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
+                <option>Beginner</option>
+                <option>Intermediate</option>
+                <option>Advanced</option>
               </select>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700">Price ($)</label>
+              <label className="block text-sm font-medium">Price ($)</label>
               <input
                 type="number"
                 name="price"
                 value={course.price}
                 onChange={handleInputChange}
                 min="0"
-                step="0.01"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 w-full border rounded-md p-2"
               />
             </div>
+
           </div>
-          
+
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700">Description*</label>
+            <label className="block text-sm font-medium">Description*</label>
             <textarea
               name="description"
               value={course.description}
               onChange={handleInputChange}
-              rows="3"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               required
+              className="mt-1 w-full border rounded-md p-2"
             />
           </div>
-          
+
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700">Course Image</label>
+            <label className="block text-sm font-medium">Thumbnail Image</label>
             <input
               type="file"
-              name="courseImage"
-              onChange={handleFileChange}
+              name="thumbnail"
               accept="image/*"
-              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              onChange={handleFileChange}
+              className="mt-1 w-full"
             />
           </div>
+
         </div>
-        
-        {/* Modules Section */}
+
+        {/* MODULES */}
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Modules</h2>
             <button
               type="button"
               onClick={addModule}
-              className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="px-4 py-1 bg-indigo-600 text-white rounded"
             >
               Add Module
             </button>
           </div>
-          
-          {course.modules.map((module, moduleIndex) => (
-            <div key={moduleIndex} className="mb-6 border-b pb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Module Title</label>
+
+          {course.modules.map((module, mIndex) => (
+            <div key={mIndex} className="border-b pb-4 mb-4">
+
+              <input
+                type="text"
+                placeholder="Module Title"
+                value={module.title}
+                onChange={(e) => updateModule(mIndex, 'title', e.target.value)}
+                className="w-full mb-2 border rounded-md p-2"
+              />
+
+              <input
+                type="text"
+                placeholder="Description"
+                value={module.description}
+                onChange={(e) => updateModule(mIndex, 'description', e.target.value)}
+                className="w-full mb-4 border rounded-md p-2"
+              />
+
+              <button
+                type="button"
+                onClick={() => addLesson(mIndex, 'video')}
+                className="mr-2 px-3 py-1 bg-blue-600 text-white rounded"
+              >
+                Add Video Lesson
+              </button>
+
+              <button
+                type="button"
+                onClick={() => addLesson(mIndex, 'quiz')}
+                className="px-3 py-1 bg-green-600 text-white rounded"
+              >
+                Add Quiz Lesson
+              </button>
+
+              {/* Lessons */}
+              {module.lessons.map((lesson, lIndex) => (
+                <div key={lIndex} className="mt-3 p-3 border rounded-md bg-gray-50">
+
                   <input
                     type="text"
-                    value={module.title}
-                    onChange={(e) => updateModule(moduleIndex, 'title', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    placeholder="Lesson Title"
+                    value={lesson.title}
+                    onChange={(e) => updateLesson(mIndex, lIndex, 'title', e.target.value)}
+                    className="w-full mb-2 border rounded-md p-2"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <input
-                    type="text"
-                    value={module.description}
-                    onChange={(e) => updateModule(moduleIndex, 'description', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+
+                  <textarea
+                    placeholder="Description"
+                    value={lesson.description}
+                    onChange={(e) => updateLesson(mIndex, lIndex, 'description', e.target.value)}
+                    className="w-full mb-2 border rounded-md p-2"
                   />
-                </div>
-              </div>
-              
-              <div className="flex space-x-2 mb-4">
-                <button
-                  type="button"
-                  onClick={() => addLesson(moduleIndex, 'video')}
-                  className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Add Video Lesson
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addLesson(moduleIndex, 'quiz')}
-                  className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                >
-                  Add Quiz Lesson
-                </button>
-              </div>
-              
-              {module.lessons.map((lesson, lessonIndex) => (
-                <div key={lessonIndex} className="ml-4 mb-4 p-4 border rounded-lg">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Lesson Title</label>
-                      <input
-                        type="text"
-                        value={lesson.title}
-                        onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Lesson Type</label>
-                      <div className="mt-1">{lesson.lessonType}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700">Description</label>
-                    <textarea
-                      value={lesson.description}
-                      onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'description', e.target.value)}
-                      rows="2"
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                  </div>
-                  
+
                   {lesson.lessonType === 'video' && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
-                      <input
-                        type="number"
-                        value={lesson.duration}
-                        onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'duration', parseInt(e.target.value))}
-                        min="0"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      />
-                    </div>
+                    <input
+                      type="number"
+                      placeholder="Duration (minutes)"
+                      value={lesson.duration}
+                      onChange={(e) => updateLesson(mIndex, lIndex, 'duration', parseInt(e.target.value))}
+                      className="w-full mb-2 border rounded-md p-2"
+                    />
                   )}
-                  
+
                   {lesson.lessonType === 'quiz' && (
-                    <div className="mt-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium">Quiz Questions</h3>
-                        <button
-                          type="button"
-                          onClick={() => addQuizQuestion(moduleIndex, lessonIndex)}
-                          className="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
-                        >
-                          Add Question
-                        </button>
-                      </div>
-                      
-                      {lesson.quizQuestions.map((question, questionIndex) => (
-                        <div key={questionIndex} className="ml-4 mb-4 p-3 border rounded bg-gray-50">
-                          <div className="mb-3">
-                            <label className="block text-sm font-medium text-gray-700">Question</label>
-                            <input
-                              type="text"
-                              value={question.question}
-                              onChange={(e) => updateQuizQuestion(moduleIndex, lessonIndex, questionIndex, 'question', e.target.value)}
-                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                          </div>
-                          
-                          <div className="mb-3">
-                            <label className="block text-sm font-medium text-gray-700">Options</label>
-                            {question.options.map((option, optionIndex) => (
-                              <div key={optionIndex} className="flex items-center mb-1">
-                                <input
-                                  type="radio"
-                                  name={`correct-${moduleIndex}-${lessonIndex}-${questionIndex}`}
-                                  checked={question.correctAnswer === optionIndex}
-                                  onChange={() => updateQuizQuestion(moduleIndex, lessonIndex, questionIndex, 'correctAnswer', optionIndex)}
-                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <input
-                                  type="text"
-                                  value={option}
-                                  onChange={(e) => updateQuizQuestion(moduleIndex, lessonIndex, questionIndex, 'options', {
-                                    optionIndex,
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => addQuizQuestion(mIndex, lIndex)}
+                        className="px-2 py-1 bg-purple-600 text-white rounded mb-2"
+                      >
+                        Add Question
+                      </button>
+
+                      {lesson.quizQuestions.map((q, qIndex) => (
+                        <div key={qIndex} className="ml-3 p-2 border rounded bg-white mb-2">
+                          <input
+                            type="text"
+                            placeholder="Question"
+                            value={q.question}
+                            onChange={(e) => updateQuizQuestion(mIndex, lIndex, qIndex, 'question', e.target.value)}
+                            className="w-full mb-2 border rounded-md p-2"
+                          />
+
+                          {q.options.map((opt, optIndex) => (
+                            <div key={optIndex} className="flex items-center mb-1">
+                              <input
+                                type="radio"
+                                checked={q.correctAnswer === optIndex}
+                                onChange={() => updateQuizQuestion(mIndex, lIndex, qIndex, 'correctAnswer', optIndex)}
+                              />
+                              <input
+                                type="text"
+                                value={opt}
+                                onChange={(e) =>
+                                  updateQuizQuestion(mIndex, lIndex, qIndex, 'options', {
+                                    optionIndex: optIndex,
                                     value: e.target.value
-                                  })}
-                                  className="ml-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                              </div>
-                            ))}
-                          </div>
+                                  })
+                                }
+                                className="ml-2 w-full border rounded-md p-1"
+                              />
+                            </div>
+                          ))}
                         </div>
                       ))}
+
                     </div>
                   )}
+
                 </div>
               ))}
+
             </div>
           ))}
         </div>
-        
-        {/* Lesson Videos Upload */}
+
+        {/* VIDEO UPLOADS */}
         {course.modules.some(m => m.lessons.some(l => l.lessonType === 'video')) && (
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Upload Lesson Videos</h2>
             <input
               type="file"
               name="lessonVideos"
-              onChange={handleFileChange}
               accept="video/*"
               multiple
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              onChange={handleFileChange}
             />
-            <p className="mt-1 text-sm text-gray-500">
-              Upload all video files in order (one for each video lesson)
-            </p>
+            <p className="text-sm text-gray-500 mt-1">Upload one video for each video lesson.</p>
           </div>
         )}
-        
+
+        {/* SUBMIT */}
         <div className="flex justify-end">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-indigo-600 text-white rounded disabled:opacity-50"
           >
             {isSubmitting ? 'Creating...' : 'Create Course'}
           </button>
         </div>
+
       </form>
     </div>
   );

@@ -64,7 +64,7 @@ const newLocal = module.exports = {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
         },
-        fidel: {
+        abugida: {
           '50': '#f0f8ff',
           '100': '#dff0ff',
           '200': '#b8e0ff',

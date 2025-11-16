@@ -138,7 +138,7 @@ export const CourseDetails = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center dark:bg-slate-950">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-fidel-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-abugida-500"></div>
       </div>
     );
   }
@@ -150,7 +150,7 @@ export const CourseDetails = () => {
           <h2 className="text-xl font-semibold mb-2 text-red-500">Error loading course</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
           {/* <Button onClick={() => window.location.reload()}>Try Again</Button> */}
-          <Link to="/courses" className="block mt-4 text-fidel-500 hover:underline">
+          <Link to="/courses" className="block mt-4 text-abugida-500 hover:underline">
             Back to Courses
           </Link>
         </div>
@@ -163,7 +163,7 @@ export const CourseDetails = () => {
       <div className="min-h-screen flex items-center justify-center dark:bg-slate-950">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Course not found</h2>
-          <Link to="/courses" className="text-fidel-500 hover:underline">
+          <Link to="/courses" className="text-abugida-500 hover:underline">
             Back to Courses
           </Link>
         </div>

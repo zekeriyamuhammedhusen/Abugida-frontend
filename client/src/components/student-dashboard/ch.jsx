@@ -401,7 +401,7 @@ export const MessagesTab = () => {
               <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
                 <button
                   onClick={() => fileInputRef.current.click()}
-                  className="text-slate-500 dark:text-slate-300 hover:text-fidel-500 dark:hover:text-fidel-400 transition-colors"
+                  className="text-slate-500 dark:text-slate-300 hover:text-abugida-500 dark:hover:text-abugida-400 transition-colors"
                 >
                   <Paperclip />
                 </button>

@@ -129,7 +129,7 @@ export const ReviewModal = ({ isOpen, onClose, onSubmit, courseTitle }) => {
                   </label>
                   <textarea
                     id="review-comment"
-                    className="w-full p-3 border border-gray-200 dark:border-slate-600 rounded-lg bg-white/50 dark:bg-slate-700/50 focus:ring-2 focus:ring-fidel-500 focus:border-fidel-500 transition-all duration-200 resize-none"
+                    className="w-full p-3 border border-gray-200 dark:border-slate-600 rounded-lg bg-white/50 dark:bg-slate-700/50 focus:ring-2 focus:ring-abugida-500 focus:border-abugida-500 transition-all duration-200 resize-none"
                     rows={5}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}

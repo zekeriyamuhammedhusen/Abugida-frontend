@@ -22,7 +22,7 @@ import {
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import UserAvatar from "@/components/layout/UserAvatar";
-import axios from "axios";
+import api from "@/lib/api";
 
 const UserDetail = ({ userId, onBack, embedded = false }) => {
   const [userData, setUserData] = useState(null);
@@ -32,15 +32,7 @@ const UserDetail = ({ userId, onBack, embedded = false }) => {
     const fetchUserData = async () => {
       if (!userId) return;
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/users/${userId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get(`/api/users/${userId}`);
         setUserData(response.data);
       } catch (error) {
         toast.error("Failed to fetch user data");
@@ -69,23 +61,7 @@ const UserDetail = ({ userId, onBack, embedded = false }) => {
 
   const handleApproveUser = async (userId) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("No authentication token found");
-        return;
-      }
-
-      await axios.put(
-        `${
-          import.meta.env.VITE_API_BASE_URL
-        }/api/admin/approve-instructor/${userId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.put(`/api/admin/approve-instructor/${userId}`);
 
       setUserData((prev) => ({ ...prev, status: "active" }));
       toast.success(`User #${userId} has been approved`);
@@ -106,22 +82,7 @@ const UserDetail = ({ userId, onBack, embedded = false }) => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("No authentication token found");
-        return;
-      }
-
-      await axios.delete(
-        `${
-          import.meta.env.VITE_API_BASE_URL
-        }/api/admin/reject-instructor/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.delete(`/api/admin/reject-instructor/${userId}`);
 
       setUserData((prev) => ({ ...prev, status: "blocked" }));
       toast.success(`User #${userId} has been rejected`);
@@ -146,7 +107,7 @@ const UserDetail = ({ userId, onBack, embedded = false }) => {
   if (loading) {
     return (
       <div className="flex justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-fidel-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-abugida-500"></div>
       </div>
     );
   }

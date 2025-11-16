@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -38,19 +38,7 @@ const UserManagement = ({ onViewUser }) => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          toast.error("No authentication token found");
-          return;
-        }
-
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/admin/all-users`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
+        const response = await api.get(`/api/admin/all-users`);
         if (response.data?.users) {
           setUsers(response.data.users);
         } else {
@@ -87,24 +75,7 @@ const UserManagement = ({ onViewUser }) => {
 
   const handleApproveUser = async (userId) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("No authentication token found");
-        return;
-      }
-
-      await axios.put(
-        `${
-          import.meta.env.VITE_API_BASE_URL
-        }/api/admin/approve-instructor/${userId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      await api.put(`/api/admin/approve-instructor/${userId}`);
       toast.success(`User #${userId} has been approved`);
     } catch (error) {
       console.error(`Error approving User #${userId}:`, error);
@@ -114,23 +85,7 @@ const UserManagement = ({ onViewUser }) => {
 
   const handleRejectUser = async (userId) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("No authentication token found");
-        return;
-      }
-
-      const response = await axios.delete(
-        `${
-          import.meta.env.VITE_API_BASE_URL
-        }/api/admin/reject-instructor/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const response = await api.delete(`/api/admin/reject-instructor/${userId}`);
       toast.error(`User #${userId} has been rejected`);
     } catch (error) {
       console.error("Error rejecting user:", error);
@@ -144,22 +99,9 @@ const UserManagement = ({ onViewUser }) => {
 
   const handleBlockUser = async (userId) => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/users/block/${userId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok) {
+      const res = await api.put(`/api/users/block/${userId}`);
+      if (res.status === 200) {
         toast.success("User blocked successfully");
-      } else {
-        alert(result.message || "Failed to block user");
       }
       setUsers(
         users.map((user) =>
@@ -176,15 +118,7 @@ const UserManagement = ({ onViewUser }) => {
 
   const handleUnblockUser = async (userId) => {
     try {
-      const response = await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/api/users/unblock/${userId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await api.put(`/api/users/unblock/${userId}`);
       toast.success(response.data.message);
       setUsers(
         users.map((user) =>
@@ -378,7 +312,7 @@ const UserManagement = ({ onViewUser }) => {
           <Button
             variant="outline"
             size="sm"
-            className="bg-fidel-50 dark:bg-slate-800"
+            className="bg-abugida-50 dark:bg-slate-800"
           >
             1
           </Button>

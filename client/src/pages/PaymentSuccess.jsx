@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import axios from 'axios';
+import api from '@/lib/api';
 
 const PaymentSuccess = () => {
   const [params] = useSearchParams();
@@ -33,19 +33,11 @@ const PaymentSuccess = () => {
   const downloadReceipt = async () => {
     try {
       setDownloading(true);
-      const token = localStorage.getItem('token');
-      
-      // Request PDF from backend
-      const response = await axios.get(
-        `http://localhost:5000/api/payment/receipt/${txRef}`,
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Cache-Control': 'no-cache'
-          },
-          responseType: 'blob' // Important for file downloads
-        }
-      );
+      // Request PDF from backend using cookie-based auth
+      const response = await api.get(`/api/payment/receipt/${txRef}`, {
+        responseType: 'blob',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
 
       // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -72,19 +64,10 @@ const PaymentSuccess = () => {
         if (!txRef) throw new Error('Missing transaction reference');
         if (!courseId) throw new Error('Missing course ID');
 
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('Authentication required');
-
-        const response = await axios.get(
-          `http://localhost:5000/api/payment/verify-payment/${txRef}`,
-          {
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              'Cache-Control': 'no-cache'
-            },
-            params: { course_id: courseId }
-          }
-        );
+        const response = await api.get(`/api/payment/verify-payment/${txRef}`, {
+          params: { course_id: courseId },
+          headers: { 'Cache-Control': 'no-cache' },
+        });
 
         // Check for valid payment data in different possible locations
         const paymentData = response.data?.payment || response.data;

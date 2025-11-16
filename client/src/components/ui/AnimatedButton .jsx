@@ -16,10 +16,10 @@ const AnimatedButton = ({
   const baseStyles = "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 ease-in-out";
   
   const variantStyles = {
-    primary: "bg-fidel-500 hover:bg-fidel-600 text-white shadow-sm hover:shadow-md active:translate-y-0.5",
+    primary: "bg-abugida-500 hover:bg-abugida-600 text-white shadow-sm hover:shadow-md active:translate-y-0.5",
     secondary: "bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white",
-    outline: "border border-slate-300 dark:border-slate-700 hover:border-fidel-400 dark:hover:border-fidel-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-white",
-    ghost: "text-fidel-500 hover:text-fidel-600 hover:bg-fidel-50 dark:hover:bg-fidel-900/20"
+    outline: "border border-slate-300 dark:border-slate-700 hover:border-abugida-400 dark:hover:border-abugida-700 hover:bg-slate-50 dark:hover:bg-abugida-800/50 text-slate-900 dark:text-white",
+    ghost: "text-abugida-500 hover:text-abugida-600 hover:bg-abugida-50 dark:hover:bg-abugida-900/20"
   };
   
   const sizeStyles = {

@@ -245,9 +245,9 @@ const LessonEditor = ({
           <CardTitle>
             <div className="flex items-center gap-2">
               {lesson.type === "video" ? (
-                <Video size={18} className="text-fidel-500" />
+                <Video size={18} className="text-abugida-500" />
               ) : (
-                <BarChart size={18} className="text-fidel-500" />
+                <BarChart size={18} className="text-abugida-500" />
               )}
               <span>{lesson.type === "video" ? "Video Lesson" : "Quiz"}</span>
             </div>
@@ -362,11 +362,11 @@ const LessonEditor = ({
                               .map((video) => (
                                 <div
                                   key={video.id}
-                                  className={`border rounded-md p-2 cursor-pointer hover:border-fidel-500 transition-colors ${
-                                    video.id === lesson.videoId
-                                      ? "border-fidel-500 bg-fidel-50 dark:bg-fidel-900/20"
-                                      : ""
-                                  }`}
+                                  className={`border rounded-md p-2 cursor-pointer hover:border-abugida-500 transition-colors ${
+                                      video.id === lesson.videoId
+                                        ? "border-abugida-500 bg-abugida-50 dark:bg-abugida-900/20"
+                                        : ""
+                                    }`}
                                   onClick={() =>
                                     updateLesson(
                                       selectedModule,
@@ -383,7 +383,7 @@ const LessonEditor = ({
                                       className="w-full h-full object-cover rounded"
                                     />
                                     {video.id === lesson.videoId && (
-                                      <div className="absolute top-1 right-1 bg-fidel-500 text-white rounded-full p-1">
+                                      <div className="absolute top-1 right-1 bg-abugida-500 text-white rounded-full p-1">
                                         <Check size={12} />
                                       </div>
                                     )}

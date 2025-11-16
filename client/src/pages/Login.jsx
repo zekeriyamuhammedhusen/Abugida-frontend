@@ -46,11 +46,7 @@ const handleSubmit = async (e) => {
     // Successful login
     toast.success("Login Successful! Redirecting to your dashboard...");
 
-    // Store token if using JWT
-    if (response.token) {
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response.user));  //
-    }
+    // Do not store tokens in localStorage when using HttpOnly cookies.
     // if (checkTokenExpiry()) {
     //   localStorage.removeItem("token");
     //   navigate("/login");  
@@ -61,36 +57,13 @@ const handleSubmit = async (e) => {
 
     console.log("Login response:", { userRole, isApproved, status });
 
-    socket.emit('userConnected', _id);
+    socket.emit('userOnline', _id);
         if (status === "blocked") {
-      toast.error("Your account has been blocked by the admin.");
-      localStorage.removeItem("token"); // Remove token if stored
-      setIsLoading(false);
-      return; 
-    }
-    // Determine redirect path
-    let redirectPath = "/";
-    if (!isApproved) {
-      redirectPath = "/pending-approval";
-    } else {
-      switch (userRole) {
-        case "instructor":
-          redirectPath = "/instructor-dashboard";
-          break;
-        case "admin":
-          redirectPath = "/admin-dashboard";
-          break;
-        case "student":
-        default:
-          redirectPath = "/";
-      }
-    }
-
-    // Navigate without delay since context is already updated
-    navigate(redirectPath, { 
-      replace: true,
-      state: { freshLogin: true }
-    });
+          toast.error("Your account has been blocked by the admin.");
+          setIsLoading(false);
+          return; 
+        }
+    // Navigation is handled inside AuthContext.login; no local redirect here.
 
   } catch (error) {
     let errorMessage = "Login failed. Please try again.";
@@ -141,7 +114,7 @@ const handleSubmit = async (e) => {
     <div className="min-h-screen flex flex-col">
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background decorations */}
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-fidel-100 dark:bg-fidel-950/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-abugida-100 dark:bg-abugida-950/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
         <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-slate-100 dark:bg-slate-800/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
 
         <div className="w-full max-w-md space-y-8">
@@ -211,7 +184,7 @@ const handleSubmit = async (e) => {
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-fidel-600 focus:ring-fidel-500"
+                    className="h-4 w-4 rounded border-gray-300 text-abugida-600 focus:ring-abugida-500"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">
                     Remember me
@@ -219,7 +192,7 @@ const handleSubmit = async (e) => {
                 </div>
 
                 <div className="text-sm">
-                  <Link to="/forgot-password" className="text-fidel-600 hover:text-fidel-500 font-medium">
+                  <Link to="/forgot-password" className="text-abugida-600 hover:text-abugida-500 font-medium">
                     Forgot your password?
                   </Link>
                 </div>
@@ -228,7 +201,7 @@ const handleSubmit = async (e) => {
               <div>
                 <Button 
                   type="submit" 
-                  className="w-full bg-fidel-500 hover:bg-fidel-600 text-white"
+                  className="w-full bg-abugida-500 hover:bg-abugida-600 text-white"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -251,7 +224,7 @@ const handleSubmit = async (e) => {
               className="mt-6 text-center text-sm text-muted-foreground"
             >
               Don't have an account?{" "}
-              <Link to="/signup" className="text-fidel-600 hover:text-fidel-500 font-medium">
+              <Link to="/signup" className="text-abugida-600 hover:text-abugida-500 font-medium">
                 Sign up for free
               </Link>
             </motion.p>
