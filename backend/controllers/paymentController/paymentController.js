@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 export const initiatePayment = async (req, res) => {
   const { amount, email, fullName, courseId } = req.body;
   const studentId = req.user?._id; // Grab from authenticated user
-  const tx_ref = `FIDELHUB-${Date.now()}`;
+  const tx_ref = `Abugida-${Date.now()}`;
 
   if (!studentId) {
     return res.status(401).json({ error: 'Unauthorized. Student ID missing.' });
@@ -51,10 +51,10 @@ export const initiatePayment = async (req, res) => {
         email,
         first_name: fullName,
         tx_ref,
-        // callback_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
+        callback_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
         return_url: `${process.env.FRONTEND_URL}/payment-success?course=${courseId}&tx_ref=${tx_ref}`,
         customization: {
-          title: 'FidelHub Payment',
+          title: 'Abugida Payment',
           description: 'Payment for Course Enrollment',
         },
       },

@@ -8,7 +8,7 @@ export const testModeWithdrawal = async ({ account_name, account_number, bank_co
     bank_code,
     amount,
     currency: 'ETB',
-    reference: `FIDEL-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    reference: `Abugida-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     narration: 'Instructor Payout',
   };
 

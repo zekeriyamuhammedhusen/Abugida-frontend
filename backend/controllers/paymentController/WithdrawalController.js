@@ -13,7 +13,7 @@ export const instructorTestWithdraw = async (req, res) => {
 
     const result = await testModeWithdrawal({ account_name, account_number, bank_code, amount });
 
-    const reference = result?.data || `FIDEL-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const reference = result?.data || `Abugida-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const newWithdrawal = await Withdrawal.create({
       user: req.user._id,

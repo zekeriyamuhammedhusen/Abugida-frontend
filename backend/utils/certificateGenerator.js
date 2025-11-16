@@ -47,7 +47,7 @@ export const generateCertificate = async (studentId, courseId, studentName, cour
         .font(path.join(__dirname, './fonts/NotoSansJP-Light.otf'))
         .fontSize(10)
         .fill('#021c27')
-        .text(courseTitle || 'Fidel Hub Course', { align: 'center' });
+        .text(courseTitle || 'Abugida Course', { align: 'center' });
 
       jumpLine(doc, 2);
 

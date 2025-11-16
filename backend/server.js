@@ -17,6 +17,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/admin-Routes/adminRoutes.js";
+import instructorApprovalRoutes from './routes/admin-Routes/instructorApprovalRoutes.js';
 import User from "./models/User.js";
 import userRoutes from "./routes/userRoutes/userRoutes.js";
 import otpRoutes from "./routes/otp-Routes/otpRoutes.js";
@@ -143,6 +144,7 @@ app.use('/uploads', cors(), express.static('uploads'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/instructors', instructorApprovalRoutes);
 app.use('/api/users', adminRoutes); 
 app.use('/api/users', userRoutes);
 app.use('/api/otp', otpRoutes);
