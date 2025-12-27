@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -35,11 +36,7 @@ const CourseRatingsFeedback = () => {
   useEffect(() => {
     (async () => {
       try {
-        const token = localStorage.getItem("token");
-        const base = import.meta.env.VITE_REACT_APP_BASE_URL || "http://localhost:5000";
-        const { data } = await axios.get(`${base}/api/review/courses/ratings`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const { data } = await api.get(`/api/review/courses/ratings`);
 
         const validated = data.map((c) => ({
           ...c,

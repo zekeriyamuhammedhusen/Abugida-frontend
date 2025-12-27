@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Star, Users } from "lucide-react";
 import axios from "axios";
+import api from "@/lib/api";
 
 const RelatedCourses = ({ courseId }) => {
   const [courses, setCourses] = useState([]);
@@ -9,9 +10,7 @@ const RelatedCourses = ({ courseId }) => {
   useEffect(() => {
     const fetchRelatedCourses = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:5000/api/recommendations/courses/${courseId}/related`
-        );
+        const response = await api.get(`/api/recommendations/courses/${courseId}/related`);
         setCourses(response.data.related || []);
       } catch (error) {
         console.error("Failed to fetch related courses:", error);

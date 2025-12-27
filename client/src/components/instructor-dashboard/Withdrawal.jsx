@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { 
   Card, 
@@ -71,14 +72,7 @@ const Withdrawal = ({ user }) => {
   const fetchBalance = async () => {
     try {
       setBalanceLoading(true);
-      const response = await axios.get(
-        "http://localhost:5000/api/withdrawals/balance",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await api.get(`/api/withdrawals/balance`);
       setBalance(response.data.balance);
     } catch (error) {
       toast.error("Failed to fetch balance");
@@ -142,16 +136,7 @@ const Withdrawal = ({ user }) => {
         amount: parseFloat(amount)
       };
 
-      const response = await axios.post(
-        "http://localhost:5000/api/withdrawals/withdraw/test",
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json"
-          },
-        }
-      );
+      const response = await api.post(`/api/withdrawals/withdraw/test`, payload);
     
       if (response.data && response.data.success === false) {
         const errorMessage = response.data.message || "Withdrawal failed. Please try again.";

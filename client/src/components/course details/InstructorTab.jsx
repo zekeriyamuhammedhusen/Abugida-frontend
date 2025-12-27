@@ -1,21 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '@/lib/api';
 
 export const InstructorTab = ({ courseId, studentId }) => {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [course, setCourse] = useState(null);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setCourse(data);
+        const res = await api.get(`/api/courses/${courseId}`);
+        setCourse(res.data);
       } catch (err) {
         console.error('Failed to fetch course:', err);
         setError('Could not load course data');
@@ -28,24 +26,13 @@ export const InstructorTab = ({ courseId, studentId }) => {
   useEffect(() => {
     const checkEnrollment = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token || !studentId || !courseId) return;
+        if (!studentId || !courseId) return;
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/enrollments/check?studentId=${studentId}&courseId=${courseId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get('/api/enrollments/check', {
+          params: { studentId, courseId },
+        });
 
-        if (!response.ok) {
-          throw new Error(`Enrollment check failed with status ${response.status}`);
-        }
-
-        const data = await response.json();
-        setIsEnrolled(data?.isEnrolled || false);
+        setIsEnrolled(response.data?.isEnrolled || false);
       } catch (error) {
         console.error('Enrollment check failed:', error);
       }
@@ -56,28 +43,15 @@ export const InstructorTab = ({ courseId, studentId }) => {
 
   const handleStartConversation = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token || !course?.instructor?._id || !studentId || !courseId) return;
+      if (!course?.instructor?._id || !studentId || !courseId) return;
 
-      const response = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          studentId,
-          instructorId: course.instructor._id,
-          courseId,
-        }),
+      const response = await api.post('/api/chat/conversations', {
+        studentId,
+        instructorId: course.instructor._id,
+        courseId,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Conversation started:', data);
+      console.log('Conversation started:', response.data);
       navigate('/student-dashboard?tab=messages');
     } catch (error) {
       console.error('Failed to start conversation:', error);

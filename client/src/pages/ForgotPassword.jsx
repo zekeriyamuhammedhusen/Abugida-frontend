@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Mail } from 'lucide-react';
 import axios from 'axios';  // Import Axios for API call
+import api from '@/lib/api';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -28,7 +29,7 @@ const ForgotPassword = () => {
     
     try {
       // Make API call to send OTP for password reset
-      const response = await axios.post('http://localhost:5000/api/otp/request-password-reset', { email });
+      const response = await api.post(`/api/otp/request-password-reset`, { email });
 
       if (response.status === 200) {
         // Navigate to OTP verification page with context for password reset

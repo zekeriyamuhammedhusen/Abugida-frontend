@@ -1,17 +1,13 @@
 
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-import axios from "axios";
+import api from '@/lib/api';
 import { Button } from "@/components/ui/button";
 import { BookOpen, ListPlus } from "lucide-react";
 import ModuleEditor from "./ModuleEditor";
 import LessonEditor from "./LessonEditor";
 import { useCourse } from "./CourseProvider";
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_UR || "http://localhost:5000/api",
-  withCredentials: true,
-});
 
 const CurriculumManager = ({
   modules,
@@ -41,7 +37,7 @@ const CurriculumManager = ({
         description: "",
         courseId,
       };
-      const response = await api.post("/modules", moduleData, {
+      const response = await api.post("/api/modules", moduleData, {
         headers: { "Content-Type": "application/json" },
       });
       const newModule = { ...response.data, lessons: [] };
@@ -54,17 +50,17 @@ const CurriculumManager = ({
     }
   };
 
-  const updateModule = async (moduleId, field, value) => {
+  const updateModule = async (moduleId, field, value, { silent = false } = {}) => {
     try {
-      await api.put(`/modules/${moduleId}`, { [field]: value });
+      await api.put(`/api/modules/${moduleId}`, { [field]: value });
       setModules(
         modules.map((module) =>
           module._id === moduleId ? { ...module, [field]: value } : module
         )
       );
-      toast.success("Module updated successfully");
+      if (!silent) toast.success("Module updated successfully");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update module");
+      if (!silent) toast.error(error.response?.data?.message || "Failed to update module");
     }
   };
 
@@ -86,7 +82,7 @@ const CurriculumManager = ({
 
   const deleteModule = async (moduleId) => {
     try {
-      await api.delete(`/modules/${moduleId}`);
+      await api.delete(`/api/modules/${moduleId}`);
       setModules(modules.filter((module) => module._id !== moduleId));
       if (selectedModule === moduleId) {
         setSelectedModule(null);
@@ -104,7 +100,7 @@ const CurriculumManager = ({
       return;
     }
     try {
-      const response = await api.post("/lessons", {
+      const response = await api.post("/api/lessons", {
         title: `${type === "video" ? "Video" : "Quiz"} Lesson`,
         type,
         moduleId,
@@ -135,9 +131,9 @@ const CurriculumManager = ({
     }
   };
 
-  const updateLesson = async (moduleId, lessonId, field, value) => {
+  const updateLesson = async (moduleId, lessonId, field, value, { silent = false } = {}) => {
     try {
-      await api.put(`/lessons/${lessonId}`, { [field]: value });
+      await api.put(`/api/lessons/${lessonId}`, { [field]: value });
       setModules(
         modules.map((module) =>
           module._id === moduleId
@@ -152,9 +148,11 @@ const CurriculumManager = ({
             : module
         )
       );
-      toast.success("Lesson updated successfully");
+      if (!silent) {
+        toast.success("Lesson updated successfully");
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update lesson");
+      if (!silent) toast.error(error.response?.data?.message || "Failed to update lesson");
     }
   };
 
@@ -196,61 +194,26 @@ const CurriculumManager = ({
     toast.success("Lesson deleted");
   };
 
-  const handleVideoUpload = async (file, moduleId, lessonId) => {
+  const handleVideoUpload = async (file, moduleId, lessonId, progressCb) => {
     try {
       const formData = new FormData();
-      formData.append("video", file);
+        formData.append("video", file); // Ensure the field name is 'video'
 
       setUploadProgress((prev) => ({ ...prev, [lessonId]: 0 }));
 
-      const uploadRes = await api.post("/media", formData, {
+      const uploadRes = await api.post("/api/media", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
             (progressEvent.loaded * 100) / progressEvent.total
           );
           setUploadProgress((prev) => ({ ...prev, [lessonId]: percentCompleted }));
+          if (progressCb) progressCb(percentCompleted);
         },
       });
 
       const videoData = uploadRes.data;
-
-      const assignRes = await api.put(`/media/assign/${lessonId}`, {
-        videoId: videoData.id,
-        videoUrl: videoData.url,
-        thumbnailUrl: videoData.thumbnail,
-        duration: videoData.duration,
-        videoPublicId: videoData.id,
-        thumbnailPublicId: videoData.thumbnail
-          .split("/")
-          .slice(-2)
-          .join("/")
-          .replace(/\.[^/.]+$/, ""),
-      }, {
-        headers: { "Content-Type": "application/json" },
-      });
-
-      setModules((prevModules) =>
-        prevModules.map((module) => {
-          if (module._id !== moduleId) return module;
-          return {
-            ...module,
-            lessons: (module.lessons ?? []).map((lesson) =>
-              lesson._id === lessonId
-                ? {
-                    ...lesson,
-                    videoId: videoData.id,
-                    videoUrl: assignRes.data.lesson.video.url,
-                    thumbnailUrl: assignRes.data.lesson.video.thumbnailUrl,
-                    duration: assignRes.data.lesson.duration,
-                    status: "complete",
-                  }
-                : lesson
-            ),
-          };
-        })
-      );
-
+      // Add to uploads as processing if no playback URL yet
       setVideoUploads((prev) => [
         ...prev,
         {
@@ -259,14 +222,64 @@ const CurriculumManager = ({
           thumbnail: videoData.thumbnail,
           duration: videoData.duration,
           size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
-          status: "complete",
+          status: videoData.url ? "complete" : "processing",
         },
       ]);
 
-      toast.success("Video uploaded and assigned successfully");
+      // Assign Cloudinary video directly (url is available immediately)
+      const assignVideoToLesson = async (url, thumbUrl) => {
+        const assignRes = await api.put(`/api/media/assign/${lessonId}`, {
+          videoId: videoData.id,
+          videoUrl: url,
+          thumbnailUrl: thumbUrl || videoData.thumbnail,
+          duration: videoData.duration,
+          videoPublicId: videoData.id,
+          thumbnailPublicId: (videoData.thumbnail || "")
+            .split("/")
+            .slice(-2)
+            .join("/")
+            .replace(/\.[^/.]+$/, ""),
+        }, {
+          headers: { "Content-Type": "application/json" },
+        });
+
+        setModules((prevModules) =>
+          prevModules.map((module) => {
+            if (module._id !== moduleId) return module;
+            return {
+              ...module,
+              lessons: (module.lessons ?? []).map((lesson) =>
+                lesson._id === lessonId
+                  ? {
+                      ...lesson,
+                      videoId: videoData.id,
+                      videoUrl: assignRes.data.lesson.video.url,
+                      thumbnailUrl: assignRes.data.lesson.video.thumbnailUrl,
+                      duration: assignRes.data.lesson.duration,
+                      status: "complete",
+                    }
+                  : lesson
+              ),
+            };
+          })
+        );
+
+        setVideoUploads((prev) =>
+          prev.map((v) => (v.id === videoData.id ? { ...v, status: "complete" } : v))
+        );
+
+        toast.success("Video uploaded and assigned successfully");
+      };
+
+      if (videoData.url) {
+        await assignVideoToLesson(videoData.url, videoData.thumbnail);
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to upload video");
       setUploadProgress((prev) => ({ ...prev, [lessonId]: 0 }));
+      if (progressCb) progressCb(0);
+      // Propagate error so caller (LessonEditor) can react and avoid false success toasts
+      throw error;
     }
   };
 
@@ -361,7 +374,7 @@ const CurriculumManager = ({
                 onQuizQuestionsChange={(questions) => {
                   setCurrentQuizQuestions(questions);
                   if (selectedLesson) {
-                    api.post(`/media/assign/${selectedLesson}`, {
+                    api.post(`/api/media/assign/${selectedLesson}`, {
                       quizQuestions: questions.map((q) => ({
                         question: q.question,
                         options: q.options.map((opt) => ({
@@ -392,7 +405,7 @@ const CurriculumManager = ({
                     }).catch((error) => {
                       toast.error(error.response?.data?.message || "Failed to save quiz questions");
                     });
-                    updateLesson(selectedModule, selectedLesson, "quizQuestions", questions);
+                    updateLesson(selectedModule, selectedLesson, "quizQuestions", questions, { silent: true });
                   }
                 }}
                 onReplaceLessonClick={(moduleId, lessonId) => {

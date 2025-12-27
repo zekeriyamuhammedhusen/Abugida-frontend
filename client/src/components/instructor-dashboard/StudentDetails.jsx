@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Clock, Download, MessageSquare, BarChart2 } from "lucide-react";
 import { toast } from "sonner";
+import api from '@/lib/api';
 import { jsPDF } from "jspdf";
 import { Line } from "react-chartjs-2";
 import { format } from 'date-fns';
@@ -65,20 +66,16 @@ const StudentDetails = ({ selectedStudent, onBack, user }) => {
     }
 
     try {
-      await fetch(`http://localhost:5000/api/messages/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentId: selectedStudent.id,
-          senderId: user._id,
-          message,
-        }),
+      await api.post('/api/messages/send', {
+        studentId: selectedStudent.id,
+        senderId: user._id,
+        message,
       });
       toast.success(`Message sent to ${selectedStudent.name}!`);
       setMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error("Failed to send message.");
+      toast.error(error.response?.data?.message || "Failed to send message.");
     }
   };
 

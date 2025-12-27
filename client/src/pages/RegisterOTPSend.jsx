@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from "sonner";
 import { UserPlus, ArrowLeft } from 'lucide-react';
-import axios from 'axios';
+import api from '@/lib/api';
 
 const RegisterOTPSend = () => {
     const [email, setEmail] = useState('');
@@ -42,23 +42,14 @@ const RegisterOTPSend = () => {
         setIsSubmitting(true);
     
         try {
-            const response = await fetch('http://localhost:5000/api/otp/send-otp', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email }),
-            });
-    
-            const data = await response.json();
+            const res = await api.post('/api/otp/send-otp', { email });
+            const data = res.data;
+
             console.log("API Response:", data);
-    
-            // Check for the message field or success status directly
+
             if (data.message === 'OTP sent successfully') {
-                // ✅ Show success toast
                 toast.success(data.message || `OTP sent to ${email}`);
-    
-                // ✅ Then navigate to the verification page
+
                 navigate('/signup/verify-otp', {
                     state: {
                         email,
@@ -69,13 +60,13 @@ const RegisterOTPSend = () => {
                         timestamp: new Date().getTime(),
                     },
                 });
-                console.log("Navigating to /signup/verify-otp");  // Debug log to confirm
+                console.log("Navigating to /signup/verify-otp");
             } else {
-                // ❌ Show error toast if the message is unexpected
                 toast.error(data.message || "Could not send OTP");
             }
         } catch (error) {
-            toast.error(error.message || "Could not send OTP");
+            const msg = error?.response?.data?.message || error.message || "Could not send OTP";
+            toast.error(msg);
         } finally {
             setIsSubmitting(false);
         }
@@ -87,7 +78,7 @@ const RegisterOTPSend = () => {
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="mb-8 text-center">
                     <Link to="/">
-                        <h1 className="text-3xl font-bold text-gray-900">Fidel-Hub</h1>
+                        <h1 className="text-3xl font-bold text-gray-900">Abugida</h1>
                     </Link>
                 </div>
                 

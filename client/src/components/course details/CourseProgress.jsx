@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { ReviewModal } from "./ReviewModal";
 import { toast } from "sonner";
 
-const API_BASE_URL = 'http://localhost:5000';
+import api from '@/lib/api';
 
 // Enrollment check hook
 const useEnrollment = (studentId, courseId) => {
@@ -27,40 +27,13 @@ const useEnrollment = (studentId, courseId) => {
 
     const checkEnrollment = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error("User not authenticated");
-        }
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/enrollments/check?studentId=${studentId}&courseId=${courseId}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        );
-        
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error("Please log in to view enrollment status");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        setEnrollmentState({
-          isEnrolled: data?.isEnrolled || false,
-          isLoading: false,
-          error: null,
-        });
+        const res = await api.get(`/api/enrollments/check?studentId=${studentId}&courseId=${courseId}`);
+        const data = res.data;
+        setEnrollmentState({ isEnrolled: data?.isEnrolled || false, isLoading: false, error: null });
       } catch (error) {
         console.error("Error checking enrollment:", error);
-        setEnrollmentState({
-          isEnrolled: false,
-          isLoading: false,
-          error: error.message,
-        });
+        const message = error.response?.data?.message || error.message;
+        setEnrollmentState({ isEnrolled: false, isLoading: false, error: message });
       }
     };
 
@@ -70,7 +43,7 @@ const useEnrollment = (studentId, courseId) => {
   return enrollmentState;
 };
 
-// Progress tracking hook
+// Progress tracking hook (auto-refreshes while enrolled)
 const useProgress = (studentId, courseId, isEnrolled) => {
   const [progressState, setProgressState] = useState({
     progress: null,
@@ -79,6 +52,9 @@ const useProgress = (studentId, courseId, isEnrolled) => {
   });
 
   useEffect(() => {
+    let active = true;
+    let intervalId;
+
     if (!studentId || !courseId) {
       setProgressState(prev => ({ 
         ...prev, 
@@ -97,54 +73,44 @@ const useProgress = (studentId, courseId, isEnrolled) => {
       return;
     }
 
-    const fetchProgress = async () => {
+    const fetchProgress = async (showLoading = false) => {
+      if (!active) return;
+      if (showLoading) {
+        setProgressState(prev => ({ ...prev, isLoading: true }));
+      }
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error("User not authenticated");
-        }
-
-        const res = await fetch(
-          `${API_BASE_URL}/api/progress/${studentId}/${courseId}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        );
-        
-        if (!res.ok) {
-          if (res.status === 401) {
-            throw new Error("Please log in to view progress");
-          }
-          if (res.status === 404) {
-            setProgressState({
-              progress: null,
-              isLoading: false,
-              error: null,
-            });
-            return;
-          }
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        
-        const data = await res.json();
-        setProgressState({
-          progress: data,
-          isLoading: false,
-          error: null,
-        });
+        const res = await api.get(`/api/progress/${studentId}/${courseId}`);
+        if (!active) return;
+        setProgressState({ progress: res.data, isLoading: false, error: null });
       } catch (err) {
         console.error("Failed to fetch progress:", err);
-        setProgressState({
-          progress: null,
-          isLoading: false,
-          error: err.message,
-        });
+        if (err.response?.status === 404) {
+          if (!active) return;
+          setProgressState({ progress: null, isLoading: false, error: null });
+          return;
+        }
+        if (!active) return;
+        setProgressState({ progress: null, isLoading: false, error: err.response?.data?.message || err.message });
       }
     };
 
-    fetchProgress();
+    // initial load
+    fetchProgress(true);
+
+    // auto-refresh every 15s and on tab focus/visibility change
+    intervalId = setInterval(() => fetchProgress(false), 15000);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchProgress(false);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      active = false;
+      if (intervalId) clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [studentId, courseId, isEnrolled]);
 
   return progressState;
@@ -311,7 +277,8 @@ export const CourseProgress = ({ studentId, courseId, course }) => {
     let nextLesson = null;
     for (const module of course.modules || []) {
       for (const lesson of module.lessons || []) {
-        if (!progress?.completedLessons?.includes(lesson.id)) {
+        const lid = lesson._id || lesson.id;
+        if (!progress?.completedLessons?.includes(lid)) {
           nextLesson = lesson;
           break;
         }
@@ -320,7 +287,9 @@ export const CourseProgress = ({ studentId, courseId, course }) => {
     }
 
     if (nextLesson) {
-      navigate(`/learn/${course.id}/lesson/${nextLesson.id}`);
+      const courseIdForNav = course._id || course.id || courseId;
+      const lessonIdForNav = nextLesson._id || nextLesson.id;
+      navigate(`/learn/${courseIdForNav}/lesson/${lessonIdForNav}`);
     } else {
       navigate(`/courses/${courseId}/complete`);
     }
@@ -328,40 +297,17 @@ export const CourseProgress = ({ studentId, courseId, course }) => {
 
   const handleReviewSubmit = async (reviewData) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error("User not authenticated");
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/review/${courseId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          course: courseId,
-          student: studentId,
-          rating: reviewData.rating,
-          comment: reviewData.comment
-        })
+      const response = await api.post(`/api/review/${courseId}`, {
+        course: courseId,
+        student: studentId,
+        rating: reviewData.rating,
+        comment: reviewData.comment,
       });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("Please log in to submit a review");
-        }
-        throw new Error('Failed to submit review');
-      }
-
-      const updatedProgress = await response.json();
-      setProgressState(prev => ({
-        ...prev,
-        progress: updatedProgress
-      }));
-      
+      // reload progress to reflect the new review
       setShowReviewModal(false);
       toast.success("Review submitted successfully!");
+      window.location.reload();
     } catch (error) {
       console.error("Error submitting review:", error);
       toast.error(error.message);
@@ -427,7 +373,8 @@ export const CourseProgress = ({ studentId, courseId, course }) => {
   let nextLesson = null;
   for (const module of modules || []) {
     for (const lesson of module.lessons || []) {
-      if (!completedLessons.includes(lesson.id)) {
+      const lid = lesson._id || lesson.id;
+      if (!completedLessons.includes(lid)) {
         nextLesson = lesson;
         break;
       }
@@ -465,11 +412,12 @@ const CertificationNotice = ({ course, studentId, isCompleted }) => {
   const navigate = useNavigate();
 
   const handleCertificationClick = () => {
-    if (!studentId || !course.id) {
+    const courseIdForNav = course._id || course.id;
+    if (!studentId || !courseIdForNav) {
       console.error("Student ID or Course ID is undefined.");
       return;
     }
-    navigate(`/get-certified/${course.id}/${studentId}`);
+    navigate(`/get-certified/${courseIdForNav}/${studentId}`);
   };
 
   return (

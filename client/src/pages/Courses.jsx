@@ -30,7 +30,7 @@ const Courses = () => {
   const [sortBy, setSortBy] = useState("popular");
   const [sortDirection, setSortDirection] = useState("desc");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const token = localStorage.getItem("token");
+  
 
   useEffect(() => {
     window.scrollTo(0, 0);

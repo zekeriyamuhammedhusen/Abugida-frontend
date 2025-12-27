@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 
@@ -32,7 +33,7 @@ export const MessagesTab = () => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const API_URL = null;
 const handleNewMessage = (message) => {
   console.log("Received new message via socket:", message);
   if (message.conversationId === selectedConversation._id) {
@@ -45,15 +46,7 @@ const handleNewMessage = (message) => {
     const fetchConversations = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(
-          `${API_URL}/api/chat/conversations/?userId=${user._id}`,
-          {
-            withCredentials: true,
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+        const response = await api.get(`/api/chat/conversations/?userId=${user._id}`);
         setConversations(response.data);
         if (response.data.length > 0 && !selectedConversation) {
           setSelectedConversation(response.data[0]);
@@ -74,15 +67,7 @@ const handleNewMessage = (message) => {
       const fetchMessages = async () => {
         try {
           setIsLoading(true);
-          const response = await axios.get(
-            `${API_URL}/api/chat/messages/${selectedConversation._id}`,
-            {
-              withCredentials: true,
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
+          const response = await api.get(`/api/chat/messages/${selectedConversation._id}`);
           setMessages(response.data);
         } catch (error) {
           console.error("Error fetching messages:", error);
@@ -152,17 +137,9 @@ const handleNewMessage = (message) => {
       formData.append("text", newMessage);
       if (file) formData.append("file", file);
 
-      const response = await axios.post(
-        `${API_URL}/api/chat/messages`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          withCredentials: true,
-        }
-      );
+      const response = await api.post(`/api/chat/messages`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       // setMessages((prev) => [...prev, response.data]);
       setNewMessage("");
@@ -205,16 +182,7 @@ const handleEdit = (messageId, newText) => {
     if (!editedMessageText.trim() || !editingMessageId) return;
 
     try {
-      const response = await axios.put(
-        `${API_URL}/api/chat/messages/${editingMessageId}`,
-        { text: editedMessageText },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          withCredentials: true,
-        }
-      );
+      const response = await api.put(`/api/chat/messages/${editingMessageId}`, { text: editedMessageText });
 
       setMessages((prev) =>
         prev.map((msg) => (msg._id === editingMessageId ? response.data : msg))
@@ -268,12 +236,7 @@ const handleEdit = (messageId, newText) => {
     if (!userConfirmed) return;
 
     try {
-      await axios.delete(`${API_URL}/api/chat/messages/${messageId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        withCredentials: true,
-      });
+      await api.delete(`/api/chat/messages/${messageId}`);
 
       setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
 

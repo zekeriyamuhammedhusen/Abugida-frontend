@@ -4,6 +4,7 @@ import CourseCard from "./CourseCard";
 import AnimatedButton from "../ui/AnimatedButton ";
 import { motion } from "framer-motion";
 import axios from "axios";
+import api from "@/lib/api";
 
 const categories = [
   "All",
@@ -23,7 +24,7 @@ const PopularCourses = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("popular");
   const [sortDirection, setSortDirection] = useState("desc");
-  const token = localStorage.getItem("token");
+  const token = null;
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -31,11 +32,8 @@ const PopularCourses = () => {
       setError(null);
       try {
         // Fetch active courses only
-        const response = await fetch("http://localhost:5000/api/courses/active");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const courseData = await response.json();
+        const response = await api.get(`/api/courses/active`);
+        const courseData = response.data;
 
         // Fetch review stats and student count for each course
         const coursesWithData = await Promise.all(
@@ -47,32 +45,15 @@ const PopularCourses = () => {
 
             // Fetch review stats
             try {
-              const reviewResponse = await axios.get(
-                `http://localhost:5000/api/review/${courseId}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                  withCredentials: true,
-                }
-              );
+              const reviewResponse = await api.get(`/api/review/${courseId}`);
               avgRating = reviewResponse.data.reviewStats?.avgRating || "N/A";
               totalReviews = reviewResponse.data.reviewStats?.totalReviews || 0;
             } catch (error) {
               console.error(`Failed to fetch review stats for course ${courseId}:`, error);
             }
 
-            
             try {
-              const studentResponse = await axios.get(
-                `http://localhost:5000/api/courses/${courseId}/student-count`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                  withCredentials: true,
-                }
-              );
+              const studentResponse = await api.get(`/api/courses/${courseId}/student-count`);
               studentCount = studentResponse.data.studentCount || 0;
             } catch (error) {
               console.error(`Failed to fetch student count for course ${courseId}:`, error);

@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -22,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UploadCloud } from "lucide-react";
-import axios from "axios";
+import api from '@/lib/api';
 
 const categories = [
   "Computer Science",
@@ -58,10 +59,6 @@ const courseFormSchema = z.object({
   }),
 });
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_UR || "http://localhost:5000/api",
-  withCredentials: true,
-});
 
 const CourseForm = ({ courseId, setCourseId, setActiveTab, setModules }) => {
   const form = useForm({
@@ -78,11 +75,6 @@ const CourseForm = ({ courseId, setCourseId, setActiveTab, setModules }) => {
   });
 
   const onSubmit = async (values) => {
-    if (courseId) {
-      toast.info("Course already created. Proceeding to curriculum.");
-      setActiveTab("curriculum");
-      return;
-    }
     try {
       const formData = new FormData();
       Object.entries(values).forEach(([key, value]) => {
@@ -93,7 +85,16 @@ const CourseForm = ({ courseId, setCourseId, setActiveTab, setModules }) => {
         }
       });
 
-      const response = await api.post("/courses", formData, {
+      if (courseId) {
+        // Update existing course only on submit
+        const response = await api.put(`/api/courses/${courseId}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        toast.success("Course updated successfully");
+        setActiveTab("curriculum");
+        return;
+      }
+      const response = await api.post("/api/courses", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -104,13 +105,45 @@ const CourseForm = ({ courseId, setCourseId, setActiveTab, setModules }) => {
       toast.success("Course created successfully");
       setActiveTab("curriculum");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create course");
+      toast.error(error.response?.data?.message || "Failed to save course");
     }
   };
 
+  // Load existing course data when editing
+  useEffect(() => {
+    let mounted = true;
+    const loadCourse = async () => {
+      if (!courseId) return;
+      try {
+        const res = await api.get(`/api/courses/${courseId}`);
+        if (!mounted) return;
+        const data = res.data;
+        form.reset({
+          title: data.title || "",
+          description: data.description || "",
+          level: data.level || "",
+          category: data.category || "",
+          price: data.price ? String(data.price) : "",
+          requirements: data.requirements || "",
+          thumbnail: null,
+        });
+        // If modules are returned, set them in parent
+        if (data.modules && setModules) {
+          setModules(data.modules);
+        }
+      } catch (error) {
+        console.error("Failed to load course", error);
+      }
+    };
+    loadCourse();
+    return () => {
+      mounted = false;
+    };
+  }, [courseId]);
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" autoComplete="off">
         <div>
           <h3 className="text-lg font-medium mb-4">Course Information</h3>
           <div className="space-y-4">

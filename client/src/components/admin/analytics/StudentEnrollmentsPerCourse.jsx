@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -74,15 +75,7 @@ const StudentEnrollmentsPerCourse = () => {
   useEffect(() => {
     const fetchEnrollmentData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/admin/graphs/enrollments-per-course`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get(`/api/admin/graphs/enrollments-per-course`);
         
 
         // Add categories to enrollment data

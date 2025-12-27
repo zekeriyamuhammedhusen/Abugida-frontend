@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -190,32 +190,27 @@ const LessonEditor = ({
     ? videoUploads.find((v) => v.id === lesson.videoId)
     : null;
 
+  // Local draft state to prevent per-keystroke server updates
+  const [draftTitle, setDraftTitle] = useState(lesson.title);
+  const [draftContent, setDraftContent] = useState(lesson.content || "");
+  const [quizDraft, setQuizDraft] = useState(lesson.quizQuestions || quizQuestions || []);
+
+  // Sync drafts when lesson changes
+  useEffect(() => {
+    setDraftTitle(lesson.title);
+    setDraftContent(lesson.content || "");
+    setQuizDraft(lesson.quizQuestions || quizQuestions || []);
+  }, [lesson._id, lesson.title, lesson.content, lesson.quizQuestions, quizQuestions]);
+
   const handleFileUpload = async (file) => {
     if (!file) return;
-
     setIsUploading(true);
     setUploadProgress(0);
     setUploadError(null);
-
     try {
-      // Create a mock progress for demonstration
-      // In a real app, you would use the actual progress from your upload handler
-      const interval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 95) {
-            clearInterval(interval);
-            return prev;
-          }
-          return prev + 5;
-        });
-      }, 300);
-
-      // Call the provided handleVideoUpload function
       await handleVideoUpload(file, selectedModule, selectedLesson, (progress) => {
         setUploadProgress(progress);
       });
-
-      clearInterval(interval);
       setUploadProgress(100);
       toast.success("Video uploaded successfully!");
     } catch (error) {
@@ -223,8 +218,8 @@ const LessonEditor = ({
       toast.error("Video upload failed");
     } finally {
       setIsUploading(false);
-      // Reset progress after a short delay
-      setTimeout(() => setUploadProgress(0), 2000);
+      // Optionally keep progress at 100 for a bit before clearing
+      setTimeout(() => setUploadProgress(0), 2500);
     }
   };
 
@@ -308,10 +303,8 @@ const LessonEditor = ({
           <Label htmlFor="lesson-title">Lesson Title</Label>
           <Input
             id="lesson-title"
-            value={lesson.title}
-            onChange={(e) =>
-              updateLesson(selectedModule, selectedLesson, "title", e.target.value)
-            }
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
             className="mt-1"
           />
         </div>
@@ -477,10 +470,8 @@ const LessonEditor = ({
               <Label htmlFor="video-description">Description (Optional)</Label>
               <Textarea
                 id="video-description"
-                value={lesson.content || ""}
-                onChange={(e) =>
-                  updateLesson(selectedModule, selectedLesson, "content", e.target.value)
-                }
+                value={draftContent}
+                onChange={(e) => setDraftContent(e.target.value)}
                 placeholder="Add details about this video lesson..."
                 className="mt-1"
               />
@@ -490,8 +481,8 @@ const LessonEditor = ({
           <div>
             <Label className="mb-3 block">Quiz Questions</Label>
             <MultipleChoiceQuiz
-              initialQuestions={lesson.quizQuestions || quizQuestions}
-              onChange={onQuizQuestionsChange}
+              initialQuestions={quizDraft}
+              onChange={setQuizDraft}
               lessonId={selectedLesson}
             />
           </div>
@@ -502,7 +493,34 @@ const LessonEditor = ({
         <div className="text-sm text-muted-foreground">
           Part of <span className="font-medium">{module.title}</span>
         </div>
-        <Button size="sm" variant="outline">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={async () => {
+            const updates = [];
+            if (draftTitle !== lesson.title) {
+              updates.push(updateLesson(selectedModule, selectedLesson, 'title', draftTitle, { silent: true }));
+            }
+            if (draftContent !== (lesson.content || '')) {
+              updates.push(updateLesson(selectedModule, selectedLesson, 'content', draftContent, { silent: true }));
+            }
+            if (lesson.type === 'quiz') {
+              const original = lesson.quizQuestions || [];
+              if (JSON.stringify(quizDraft) !== JSON.stringify(original)) {
+                updates.push(updateLesson(selectedModule, selectedLesson, 'quizQuestions', quizDraft, { silent: true }));
+              }
+            }
+            if (updates.length === 0) {
+              toast.info('No changes to save');
+              return;
+            }
+            await Promise.all(updates);
+            if (lesson.type === 'quiz') {
+              onQuizQuestionsChange?.(quizDraft);
+            }
+            toast.success('Lesson saved');
+          }}
+        >
           <CheckCircle size={14} className="mr-1" />
           Save
         </Button>

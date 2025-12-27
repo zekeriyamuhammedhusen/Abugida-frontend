@@ -1,5 +1,5 @@
 import { useState, useRef, createContext, useContext } from "react";
-import axios from "axios";
+import api from '@/lib/api';
 import {
   Book,
   UploadCloud,
@@ -98,11 +98,7 @@ const categories = [
   "Other",
 ];
 
-// Axios instance for API calls
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_UL || "http://localhost:5000/api",
-  withCredentials: true,
-});
+// central `api` instance imported from '@/lib/api'
 
 // Course form schema
 const courseFormSchema = z.object({

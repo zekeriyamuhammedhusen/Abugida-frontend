@@ -4,6 +4,7 @@ import { Lock, UserPlus } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '../ui/input-otp';
 import { Input } from '@/components/ui/input';
 import axios from 'axios';
+import api from '@/lib/api';
 import { toast } from 'sonner';
 
 const OTPVerification = ({
@@ -24,7 +25,7 @@ const OTPVerification = ({
   const handleResendOTP = async () => {
     try {
       setIsSending(true);
-      await axios.post('http://localhost:5000/api/otp/send-otp', { email });
+      await api.post('/api/otp/send-otp', { email });
       toast({
         title: "OTP Sent",
         description: "A new verification code has been sent to your email.",
@@ -52,11 +53,11 @@ const OTPVerification = ({
 
     setIsVerifying(true);
     try {
-      const route = isRegistration 
-        ? 'http://localhost:5000/api/otp/verify-otp' 
-        : 'http://localhost:5000/api/otp/verify-password-reset-otp';
+      const route = isRegistration
+        ? '/api/otp/verify-otp'
+        : '/api/otp/verify-password-reset-otp';
 
-      const response = await axios.post(route, {
+      const response = await api.post(route, {
         email,
         otp,
       });
@@ -92,7 +93,7 @@ const OTPVerification = ({
     }
 
     try {
-      await axios.post('http://localhost:5000/api/otp/reset-password', {
+      await api.post('/api/otp/reset-password', {
         email,
         otp,
         newPassword: password,

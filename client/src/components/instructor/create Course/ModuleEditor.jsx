@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
   MoveUp,
   MoveDown,
@@ -22,6 +24,30 @@ const ModuleEditor = ({
   selectedLesson,
   onBulkUpload,
 }) => {
+  const [draftTitle, setDraftTitle] = useState(module.title);
+  const [draftDescription, setDraftDescription] = useState(module.description || "");
+
+  useEffect(() => {
+    setDraftTitle(module.title);
+    setDraftDescription(module.description || "");
+  }, [module._id, module.title, module.description]);
+
+  const handleSave = async () => {
+    const updates = [];
+    if (draftTitle !== module.title) {
+      updates.push(updateModule(module._id, "title", draftTitle, { silent: true }));
+    }
+    if (draftDescription !== (module.description || "")) {
+      updates.push(updateModule(module._id, "description", draftDescription, { silent: true }));
+    }
+    if (updates.length === 0) {
+      toast.info("No changes to save");
+      return;
+    }
+    await Promise.all(updates);
+    toast.success("Module saved");
+  };
+
   return (
     <div
       className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800"
@@ -34,19 +60,22 @@ const ModuleEditor = ({
             </span>
           </div>
           <Input
-            value={module.title}
-            onChange={(e) => updateModule(module._id, "title", e.target.value)}
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
             placeholder="Module Title"
             className="text-lg font-medium"
           />
           <Input
-            value={module.description}
-            onChange={(e) =>
-              updateModule(module._id, "description", e.target.value)
-            }
+            value={draftDescription}
+            onChange={(e) => setDraftDescription(e.target.value)}
             placeholder="Module description (optional)"
             className="text-sm"
           />
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={handleSave}>
+              Save
+            </Button>
+          </div>
         </div>
         <div className="flex items-start space-x-2 ml-2">
           <Button

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import axios from "axios";
+import api from '@/lib/api';
 
 const PublishTab = ({ courseId, modules, initialPublished }) => {
   const [isPublished, setIsPublished] = useState(initialPublished);
@@ -18,15 +18,7 @@ const PublishTab = ({ courseId, modules, initialPublished }) => {
     try {
       setIsLoading(true);
 
-      const res = await axios.patch(
-        `/api/courses/${courseId}/status`,
-        { published: isPublished },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // adjust if using context or cookies
-          },
-        }
-      );
+      const res = await api.patch(`/api/courses/${courseId}/status`, { published: isPublished });
 
       toast.success(res.data.message);
     } catch (err) {

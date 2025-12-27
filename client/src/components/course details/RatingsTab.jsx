@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import { ReviewModal } from "./ReviewModal";
 import { format } from "date-fns";
+import api from '@/lib/api';
 
 export const RatingsTab = ({ courseId, courseTitle }) => {
   const { user, loading: authLoading } = useAuth();
@@ -38,13 +39,8 @@ export const RatingsTab = ({ courseId, courseTitle }) => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`http://localhost:5000/api/review/${courseId}`, {
-          credentials: "include",
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
+        const res = await api.get(`/api/review/${courseId}`);
+        const data = res.data;
         // Sort reviews by createdAt in descending order and take the top 5
         const sortedReviews = (data.reviews || [])
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -68,20 +64,12 @@ export const RatingsTab = ({ courseId, courseTitle }) => {
       throw new Error("401: User not authenticated");
     }
     try {
-      const response = await fetch(`http://localhost:5000/api/review/${courseId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          rating,
-          comment,
-          studentId: user._id,
-        }),
+      const res = await api.post(`/api/review/${courseId}`, {
+        rating,
+        comment,
+        studentId: user._id,
       });
-      if (!response.ok) {
-        throw new Error(`${response.status}: Failed to submit review`);
-      }
-      const newReview = await response.json();
+      const newReview = res.data;
       setReviews((prev) => {
         const updatedReviews = [
           {

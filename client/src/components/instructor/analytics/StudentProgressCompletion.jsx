@@ -9,6 +9,7 @@ import {
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Award } from "lucide-react";
 import axios from "axios";
+import api from "@/lib/api";
 
 const COLORS = ["#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE", "#DBEAFE"];
 
@@ -19,7 +20,7 @@ const StudentProgressCompletion = ({ timeRange }) => {
   useEffect(() => {
     const fetchProgressData = async () => {
       try {
-        const response = await axios.get("/api/graphs/student-progress-completion", {
+        const response = await api.get(`/api/graphs/student-progress-completion`, {
           params: { timeRange },
         });
         setData(response.data);

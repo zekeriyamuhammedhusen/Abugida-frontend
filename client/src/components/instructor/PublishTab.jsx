@@ -1,7 +1,7 @@
 import { UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 
 const PublishTab = ({ courseData }) => {
   const [uploading, setUploading] = useState(false);
@@ -21,25 +21,10 @@ const PublishTab = ({ courseData }) => {
       formData.append('category', courseData.category);
       // Add any additional data that your backend expects
 
-      // API request to publish the course
-      const token = localStorage.getItem('token');
-
-      if (!token) {
-        alert('You must be logged in to publish a course.');
-        return;
-      }
-
-      // API request to publish the course
-      const response = await axios.post(
-        'http://localhost:5000/api/courses/create-course',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}`,  // Add the token here
-          },
-        }
-      );
+      // API request to publish the course (cookie-based auth via api)
+      const response = await api.post('/api/courses/create-course', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       if (response.status === 200) {
         alert('Course published successfully!');

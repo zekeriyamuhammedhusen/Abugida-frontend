@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,11 +90,9 @@ const LessonEditor = ({
       formData.append('description', 'This is a lesson description');
       formData.append('free', 'true');
 
-      const response = await axios.post(
-        `http://localhost:5000/api/modules/${createdModuleId}/lessons`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      );
+      const response = await api.post(`/api/modules/${createdModuleId}/lessons`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       toast.success('Lesson created successfully');
       return response.data;

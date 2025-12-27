@@ -1,14 +1,14 @@
 import { Check, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
+import api from "@/lib/api";
 import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 export const OverviewTab = ({ course, total }) => {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const user = JSON.parse(localStorage.getItem("user"));
-  const token = localStorage.getItem("token");
+  const { user } = useAuth();
 
   // Check if already enrolled
   useEffect(() => {
@@ -16,16 +16,7 @@ export const OverviewTab = ({ course, total }) => {
       try {
         console.log("🔍 Checking enrollment for:", user._id, course._id);
 
-        const res = await axios.get(
-          `http://localhost:5000/api/enrollments/check?studentId=${user._id}&courseId=${course._id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        console.log("✅ Enrollment check response:", res.data);
-
+        const res = await api.get(`/api/enrollments/check?studentId=${user._id}&courseId=${course._id}`);
         // Handle response structure { isEnrolled: true }
         if (res.data?.isEnrolled === true) {
           setIsEnrolled(true);
@@ -48,20 +39,12 @@ export const OverviewTab = ({ course, total }) => {
         alert("Please log in to enroll.");
         return;
       }
-      const res = await axios.post(
-        "http://localhost:5000/api/payment/initiate",
-        {
-          amount: String(course.price),
-          courseId: course._id,
-          email: user.email,
-          fullName: user.name,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await api.post(`/api/payment/initiate`, {
+        amount: String(course.price),
+        courseId: course._id,
+        email: user.email,
+        fullName: user.name,
+      });
       if (res.data?.checkoutUrl) {
         window.location.replace(res.data.checkoutUrl);
       } else {

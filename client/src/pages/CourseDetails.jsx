@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import api from "@/lib/api";
 import { useParams, Link } from "react-router-dom";
 import { CourseHeader } from "../components/course details/CourseHeader";
 import { CourseContent } from "../components/course details/CourseContent";
@@ -36,10 +37,8 @@ export const CourseDetails = () => {
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/courses/${courseId}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
-        const data = await response.json();
+        const response = await api.get(`/api/courses/${courseId}`);
+        const data = response.data;
   
         const processedData = {
           ...data,

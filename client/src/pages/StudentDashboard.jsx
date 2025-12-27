@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
-  Calendar,
   Book,
   Users,
   MessageSquare,
@@ -12,17 +11,21 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { OverviewTab } from "@/components/student-dashboard/OverviewTab";
-import { CoursesTab } from "@/components/student-dashboard/CoursesTab";
 import { MessagesTab } from "@/components/student-dashboard/MessagesTab";
-import { ScheduleTab } from "@/components/student-dashboard/ScheduleTab";
 import { InstructorsTab } from "@/components/student-dashboard/InstructorsTab";
+import { CoursesTab } from "@/components/student-dashboard/CoursesTab";
 import Logo from "../components/layout/Logo";
-import { useAuth } from "../context/AuthContext"; 
+import { useAuth } from "../context/AuthContext";
 import PlatformSettings from "../components/admin/PlatformSettings";
+import api from "@/lib/api";
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [progressMap, setProgressMap] = useState({});
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -30,7 +33,6 @@ const StudentDashboard = () => {
   const navItems = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "courses", label: "My Courses", icon: Book },
-    { id: "schedule", label: "Schedule", icon: Calendar },
     { id: "messages", label: "Messages", icon: MessageSquare },
     { id: "instructors", label: "Instructors", icon: Users },
     { id: "settings", label: "Settings", icon: Settings },
@@ -54,14 +56,70 @@ const StudentDashboard = () => {
     }
   };
 
+  // Fetch courses + progress once for all tabs
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?._id) return;
+      setDataLoading(true);
+      setDataError(null);
+      try {
+        const enrolled = await api.get(`/api/enrollments/${user._id}/courses`);
+        const courseList = enrolled.data || [];
+        const updatedProgress = {};
+        await Promise.all(
+          courseList.map(async (course) => {
+            try {
+              const res = await api.get(`/api/progress/${user._id}/${course._id}`);
+              updatedProgress[course._id] = res.data;
+            } catch (err) {
+              updatedProgress[course._id] = {
+                progressPercentage: 0,
+                completedLessons: [],
+                error: err?.response?.data?.message || err?.message || "Unable to load progress",
+              };
+            }
+          })
+        );
+        setCourses(courseList);
+        setProgressMap(updatedProgress);
+      } catch (err) {
+        setDataError(err?.response?.data?.message || err?.message || "Failed to load dashboard data");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  const instructors = useMemo(() => {
+    const map = new Map();
+    courses.forEach((c) => {
+      const instr = c.instructor;
+      if (!instr) return;
+      const id = instr._id || instr.id || instr;
+      if (!map.has(id)) {
+        map.set(id, {
+          id,
+          name: instr.name || "Instructor",
+          email: instr.email,
+          courseCount: 1,
+        });
+      } else {
+        const entry = map.get(id);
+        entry.courseCount += 1;
+        map.set(id, entry);
+      }
+    });
+    return Array.from(map.values());
+  }, [courses]);
+
   const getActiveTabTitle = () => {
     switch (activeTab) {
       case "overview":
         return "Dashboard Overview";
       case "courses":
         return "My Courses";
-      case "schedule":
-        return "Schedule";
       case "messages":
         return "Messages";
       case "instructors":
@@ -144,7 +202,10 @@ const StudentDashboard = () => {
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
             <ThemeToggle />
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
-            <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
+            <button
+              onClick={() => handleNavItemClick("settings")}
+              className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200"
+            >
               <Settings size={20} />
             </button>
           </div>
@@ -157,11 +218,18 @@ const StudentDashboard = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
           >
-            {activeTab === "overview" && <OverviewTab />}
-            {activeTab === "courses" && <CoursesTab />}
-            {activeTab === "schedule" && <ScheduleTab />}
+            {activeTab === "overview" && <OverviewTab courses={courses} progressMap={progressMap} loading={dataLoading} error={dataError} />}
+            {activeTab === "courses" && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CoursesTab courses={courses} progressMap={progressMap} loading={dataLoading} error={dataError} />
+              </motion.div>
+            )}
             {activeTab === "messages" && <MessagesTab />}
-            {activeTab === "instructors" && <InstructorsTab />}
+            {activeTab === "instructors" && <InstructorsTab instructors={instructors} loading={dataLoading} error={dataError} />}
             {activeTab === "settings" && <PlatformSettings />}
           </motion.div>
         </main>

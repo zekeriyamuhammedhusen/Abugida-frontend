@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import api from '@/lib/api';
 
 export const PaymentButton = ({ courseId, amount, email, firstName, lastName }) => {
   const [loading, setLoading] = useState(false);
@@ -10,18 +11,43 @@ export const PaymentButton = ({ courseId, amount, email, firstName, lastName }) 
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/payment/initialize', {
-        course_id: courseId,
+      const response = await api.post(`/api/payment/initiate`, {
         amount,
         email,
-        first_name: firstName,
-        last_name: lastName
+        fullName: `${firstName} ${lastName}`,
+        studentId: null,
+        courseId,
       });
 
-      if (response.data.success) {
-        window.location.href = response.data.paymentUrl;
+      const checkoutUrl = response.data.checkoutUrl;
+      if (checkoutUrl) {
+        const popup = window.open('about:blank', '_blank', 'noopener,noreferrer');
+        let setFailed = false;
+        if (popup) {
+          try {
+            popup.location.href = checkoutUrl;
+            try { popup.focus(); } catch (e) { /* ignore */ }
+          } catch (e) {
+            setFailed = true;
+          }
+        }
+
+        setTimeout(() => {
+          try {
+            if (!popup || popup.closed) {
+              window.location.href = checkoutUrl;
+              return;
+            }
+            if (setFailed) {
+              const newTab = window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+              if (!newTab) window.location.href = checkoutUrl;
+            }
+          } catch (e) {
+            window.location.href = checkoutUrl;
+          }
+        }, 1500);
       } else {
-        setError(response.data.error || 'Payment failed');
+        setError('Payment initialization failed');
       }
     } catch (err) {
       setError(err.response?.data?.error || 'Payment error');

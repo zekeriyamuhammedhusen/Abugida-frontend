@@ -3,39 +3,56 @@ import { motion } from "framer-motion";
 import { BookOpen, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axios from "axios";
+import api from "@/lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 
-export const CoursesTab = () => {
+export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap, loading: propLoading, error: propError }) => {
   const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [progressMap, setProgressMap] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const navigate = useNavigate();
 
   // Fetch enrolled courses
   useEffect(() => {
+    if (propCourses) {
+      setCourses(propCourses);
+      setIsLoading(!!propLoading);
+      setError(propError || null);
+      return;
+    }
+
     const fetchCourses = async () => {
       if (!user?._id) return;
 
       setIsLoading(true);
       try {
-        const response = await axios.get(`/api/enrollments/${user._id}/courses`);
+        const response = await api.get(`/api/enrollments/${user._id}/courses`);
         setCourses(response.data);
-      } catch (error) {
-        console.error("Failed to fetch enrolled courses:", error);
+      } catch (err) {
+        console.error("Failed to fetch enrolled courses:", err);
+        setError(err?.response?.data?.message || err?.message || "Failed to load courses");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchCourses();
-  }, [user]);
+  }, [user, propCourses, propLoading, propError]);
 
   // Fetch progress for all courses
   useEffect(() => {
+    if (propProgressMap && Object.keys(propProgressMap).length) {
+      setProgressMap(propProgressMap);
+      setIsLoading(!!propLoading);
+      setError(propError || null);
+      return;
+    }
+
     const fetchAllProgress = async () => {
       if (!user?._id || courses.length === 0) return;
 
@@ -46,9 +63,8 @@ export const CoursesTab = () => {
         await Promise.all(
           courses.map(async (course) => {
             try {
-              const res = await fetch(`/api/progress/${user._id}/${course._id}`);
-              if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-              const data = await res.json();
+              const res = await api.get(`/api/progress/${user._id}/${course._id}`);
+              const data = res.data;
               updatedProgressMap[course._id] = data;
             } catch (err) {
               console.error(`Progress fetch failed for course ${course._id}:`, err);
@@ -60,8 +76,9 @@ export const CoursesTab = () => {
             }
           })
         );
-      } catch (error) {
-        console.error("Failed to fetch progress for courses:", error);
+      } catch (err) {
+        console.error("Failed to fetch progress for courses:", err);
+        setError(err?.response?.data?.message || err?.message || "Failed to load progress");
       } finally {
         setProgressMap(updatedProgressMap);
         setIsLoading(false);
@@ -69,7 +86,7 @@ export const CoursesTab = () => {
     };
 
     fetchAllProgress();
-  }, [user, courses]);
+  }, [user, courses, propProgressMap, propLoading, propError]);
 
   const filteredCourses = courses.filter((course) => {
     const progress = progressMap[course._id];

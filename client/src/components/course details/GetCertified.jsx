@@ -2,33 +2,38 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Award, Download, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import api from '@/lib/api';
+import { useAuth } from "@/context/AuthContext";
 
 const GetCertified = () => {
   const { studentId, courseId } = useParams();
+  const { user, loading: authLoading } = useAuth();
   const [course, setCourse] = useState(null);
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const effectiveStudentId = studentId || user?._id;
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [courseRes, progressRes] = await Promise.all([
-          fetch(`/api/courses/${courseId}`),
-          fetch(`/api/progress/${studentId}/${courseId}`),
-        ]);
+          if (!courseId) {
+            throw new Error("Missing course identifier");
+          }
+          if (!effectiveStudentId) {
+            // Wait for auth to resolve if studentId is not in route
+            return;
+          }
+          const [courseRes, progressRes] = await Promise.all([
+            api.get(`/api/courses/${courseId}`),
+            api.get(`/api/progress/${effectiveStudentId}/${courseId}`),
+          ]);
 
-        if (!courseRes.ok || !progressRes.ok) {
-          throw new Error("Failed to fetch course or progress data");
-        }
-
-        const [courseData, progressData] = await Promise.all([
-          courseRes.json(),
-          progressRes.json(),
-        ]);
+          const courseData = courseRes.data;
+          const progressData = progressRes.data;
 
         setCourse(courseData);
         setProgress(progressData);
@@ -39,8 +44,10 @@ const GetCertified = () => {
         setLoading(false);
       }
     };
-    fetchData();
-  }, [studentId, courseId]);
+    if (!authLoading) {
+      fetchData();
+    }
+  }, [authLoading, effectiveStudentId, courseId]);
 
   const isCompleted = progress?.progressPercentage === 100;
   const progressValue = progress?.progressPercentage || 0;
@@ -52,43 +59,42 @@ const GetCertified = () => {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(`/api/certificates/generate-certificate/${studentId}/${courseId}`);
-      if (!response.ok) {
-        throw new Error("Failed to generate certificate");
+      if (!effectiveStudentId) {
+        throw new Error("No student ID available");
       }
-
-      const contentType = response.headers.get("content-type");
-      if (contentType === "application/pdf") {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `certificate-${studentId}-${courseId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        return;
-      }
-
-      const data = await response.json();
-      if (data.certificateUrl) {
-        const fileUrl = `http://localhost:5000${data.certificateUrl}`;
-        const fileResponse = await fetch(fileUrl);
-        if (!fileResponse.ok) {
-          throw new Error("Failed to fetch certificate file");
+      const res = await api.get(`/api/certificates/generate-certificate/${effectiveStudentId}/${courseId}`, { responseType: 'blob' });
+      // If backend returns PDF directly, responseType 'blob' will contain it
+      if (res && res.data) {
+        const contentType = res.headers['content-type'] || '';
+        if (contentType.includes('application/pdf')) {
+          const blob = new Blob([res.data], { type: contentType });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `certificate-${studentId}-${courseId}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          return;
         }
-        const fileBlob = await fileResponse.blob();
+      }
+      // Fallback: ask backend for certificate URL JSON
+      const infoRes = await api.get(`/api/certificates/generate-certificate/${effectiveStudentId}/${courseId}`);
+      const data = infoRes.data;
+      if (data.certificateUrl) {
+        const fileRes = await api.get(data.certificateUrl, { responseType: 'blob' });
+        const fileBlob = new Blob([fileRes.data]);
         const blobUrl = window.URL.createObjectURL(fileBlob);
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = blobUrl;
-        a.download = data.certificateUrl.split("/").pop() || "certificate.pdf";
+        a.download = data.certificateUrl.split('/').pop() || 'certificate.pdf';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(blobUrl);
       } else {
-        throw new Error("No certificate URL provided");
+        throw new Error('No certificate URL provided');
       }
     } catch (err) {
       console.error("Download failed:", err);

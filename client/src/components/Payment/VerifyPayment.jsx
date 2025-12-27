@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import api from '@/lib/api';
 
 const VerifyPayment = () => {
   const { tx_ref } = useParams();
@@ -10,7 +11,7 @@ const VerifyPayment = () => {
   useEffect(() => {
     const fetchPayment = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/payment/verify-payment/${tx_ref}`);
+        const res = await api.get(`/api/payment/verify-payment/${tx_ref}`);
         setPayment(res.data);
         setStatus('success');
       } catch (error) {

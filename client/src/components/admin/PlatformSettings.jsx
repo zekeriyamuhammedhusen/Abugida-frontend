@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import axios from "axios";
+import api from "@/lib/api";
 
 const PlatformSettings = () => {
   const [user, setUser] = useState({
@@ -35,33 +35,10 @@ const PlatformSettings = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Please log in to view your profile");
-        return;
-      }
-  
-      let userId;
-      try {
-        const tokenPayload = JSON.parse(atob(token.split(".")[1]));
-        userId = tokenPayload.id;
-       } catch (error) {
-        toast.error("Invalid token format");
-        return;
-      }
-  
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/users/${userId}`;
-   
       try {
         setIsLoading(true);
-        const response = await axios.get(apiUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-  
+        const response = await api.get(`/api/auth/me`);
         const userData = response.data;
-        console.log("API Response:", userData);
         setUser(userData);
         setFormData((prev) => ({
           ...prev,
@@ -70,18 +47,11 @@ const PlatformSettings = () => {
           bio: userData.bio || "",
         }));
         const fullProfilePicUrl = userData.profilePic && typeof userData.profilePic === 'string'
-        ? `${userData.profilePic}` 
-        : "/avatars/default-avatar.jpg";
-  
-      
-         
-           console.log("Profile Pic URL:", fullProfilePicUrl);
-           setAvatarPreview(fullProfilePicUrl);
-           console.log("Avatar Preview Set To:", fullProfilePicUrl);        console.log("Avatar Preview Set To:", fullProfilePicUrl);
-      }  catch (error) {
+          ? `${userData.profilePic}`
+          : "/avatars/default-avatar.jpg";
+        setAvatarPreview(fullProfilePicUrl);
+      } catch (error) {
         console.error("API Error:", error.response?.data || error.message);
-        console.log("API Response:", response.data);
-
         toast.error(error.response?.data?.message || error.message || "Failed to fetch user data");
       } finally {
         setIsLoading(false);
@@ -152,16 +122,8 @@ const PlatformSettings = () => {
     }
 
     try {
-      const response = await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/api/users/profile`,
-        formDataToSend,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      // Let axios set multipart boundaries automatically
+      const response = await api.put(`/api/users/profile`, formDataToSend);
 
       setIsLoading(false);
       toast.success("Profile updated successfully!");
@@ -182,18 +144,10 @@ const PlatformSettings = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/api/users/profile/password`,
-        {
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-          },
-        }
-      );
+      const response = await api.put(`/api/users/profile/password`, {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      });
 
       setIsLoading(false);
       setFormData((prev) => ({

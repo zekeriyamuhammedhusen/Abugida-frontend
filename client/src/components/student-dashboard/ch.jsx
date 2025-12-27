@@ -3,6 +3,7 @@ import { Search, Send, Paperclip, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 
@@ -21,21 +22,13 @@ export const MessagesTab = () => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const API_URL = null;
 
   useEffect(() => {
     const fetchConversations = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(
-          `${API_URL}/api/chat/conversations/?userId=${user._id}`,
-          {
-            withCredentials: true,
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+        const response = await api.get(`/api/chat/conversations/?userId=${user._id}`);
         setConversations(response.data);
         if (response.data.length > 0 && !selectedConversation) {
           setSelectedConversation(response.data[0]);
@@ -57,15 +50,7 @@ export const MessagesTab = () => {
       const fetchMessages = async () => {
         try {
           setIsLoading(true);
-          const response = await axios.get(
-            `${API_URL}/api/chat/messages/${selectedConversation._id}`,
-            {
-              withCredentials: true,
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
+          const response = await api.get(`/api/chat/messages/${selectedConversation._id}`);
           setMessages(response.data);
         } catch (error) {
           console.error("Error fetching messages:", error);
@@ -126,17 +111,7 @@ export const MessagesTab = () => {
       if (file) {
         const formData = new FormData();
         formData.append("file", file);
-        const uploadResponse = await axios.post(
-          `${API_URL}/api/chat/messages`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            withCredentials: true,
-          }
-        );
+        const uploadResponse = await api.post(`/api/chat/messages`, formData, { headers: {"Content-Type": "multipart/form-data"} });
         fileUrl = uploadResponse.data.url;
         fileType = getFileCategory(file.type); // ✅ Safe to call now
       }
@@ -149,16 +124,7 @@ export const MessagesTab = () => {
         fileType,
       };
 
-      const response = await axios.post(
-        `${API_URL}/api/chat/messages`,
-        messageData,
-        {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await api.post(`/api/chat/messages`, messageData);
 
       setMessages((prev) => [...prev, response.data]);
       setNewMessage("");

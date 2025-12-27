@@ -13,6 +13,7 @@ import PaymentComponent from "../components/instructor-dashboard/PaymentComponen
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import axios from "axios";
+import api from "@/lib/api";
 import InstructorAnalyticsDashboard from "../components/instructor/analytics/InstructorAnalyticsDashboard";
 import { MessagesTab } from "@/components/student-dashboard/MessagesTab";
 
@@ -22,6 +23,7 @@ const InstructorDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user } = useAuth();
   const [courses, setCourses] = useState([]);
+  const [editCourseId, setEditCourseId] = useState(null);
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState({
     courses: false,
@@ -53,8 +55,7 @@ const InstructorDashboard = () => {
       setLoading((prev) => ({ ...prev, overall: true, courses: true }));
 
       // Fetch courses
-      const coursesUrl = `http://localhost:5000/api/courses/instructor/${user._id}/courses`;
-      const response = await axios.get(coursesUrl, { signal });
+      const response = await api.get(`/api/courses/instructor/${user._id}/courses`, { signal });
 
       console.log("[DEBUG] Courses response:", {
         status: response.status,
@@ -70,9 +71,9 @@ const InstructorDashboard = () => {
 
       const coursesWithStats = await Promise.all(
         response.data.map(async (course) => {
-          const statsUrl = `http://localhost:5000/api/courses/${user._id}/course/${course._id}/average-progress`;
+          const statsUrl = `/api/courses/${user._id}/course/${course._id}/average-progress`;
           try {
-            const statsResponse = await axios.get(statsUrl, { signal });
+            const statsResponse = await api.get(statsUrl, { signal });
             return {
               ...course,
               progress: statsResponse.data.averageProgress || 0,
@@ -95,12 +96,14 @@ const InstructorDashboard = () => {
       setCourses(coursesWithStats);
       updateSummaryStats(coursesWithStats);
     } catch (error) {
-      if (!axios.isCancel(error)) {
-        console.error("[DEBUG] Fetch error:", error);
-        toast.error("Failed to load course data");
-        setCourses([]);
-        setStats([]);
+      if (axios.isCancel(error)) {
+        // Suppress canceled request debug logs
+        return;
       }
+      console.error("[DEBUG] Fetch error:", error);
+      toast.error("Failed to load course data");
+      setCourses([]);
+      setStats([]);
     } finally {
       if (!signal.aborted) {
         setLoading({ courses: false, stats: false, overall: false });
@@ -171,7 +174,30 @@ const InstructorDashboard = () => {
   const handleCourseCreated = () => {
     fetchInstructorCourses();
     setMainTab("list");
+    setEditCourseId(null);
     toast.success("Course created successfully");
+  };
+
+  const handleEditCourse = (courseId) => {
+    setEditCourseId(courseId);
+    setMainTab("create");
+    setActiveTab("courses");
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  const handleDeleteCourse = async (courseId) => {
+    const ok = window.confirm("Are you sure you want to delete this course? This action cannot be undone.");
+    if (!ok) return;
+    try {
+      await api.delete(`/api/courses/${courseId}`);
+      toast.success("Course deleted");
+      fetchInstructorCourses();
+    } catch (error) {
+      console.error("Failed to delete course", error);
+      toast.error(error.response?.data?.message || "Failed to delete course");
+    }
   };
 
   return (
@@ -256,10 +282,12 @@ const InstructorDashboard = () => {
                       onCreate={() => setMainTab("create")}
                       showStatus={true}
                       showActions={true}
+                      onEdit={handleEditCourse}
+                      onDelete={handleDeleteCourse}
                     />
                   </TabsContent>
                   <TabsContent value="create">
-                    <CourseBuilder onSave={handleCourseCreated} />
+                    <CourseBuilder onSave={handleCourseCreated} initialCourseId={editCourseId} />
                   </TabsContent>
                 </Tabs>
               )}

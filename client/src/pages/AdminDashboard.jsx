@@ -20,7 +20,8 @@ import PlatformSettings from "../components/admin/PlatformSettings";
 import UserManagement from "../components/admin/UserManagement";
 import UserDetail from "../pages/Userdetails";
 import Logo from "../components/layout/Logo";
-import { useAuth } from "../context/AuthContext"; 
+import { useAuth } from "../context/AuthContext";
+import CourseTable from "../components/instructor-dashboard/CourseTable";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -64,7 +65,8 @@ const AdminDashboard = () => {
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 h-[100vh] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 transition-transform duration-300 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 md:relative md:block overflow-hidden`} >
+        } md:translate-x-0 md:relative md:block overflow-hidden`}
+      >
         <div className="flex items-center space-x-2 mb-8">
           <Logo />
         </div>
@@ -190,7 +192,12 @@ const AdminDashboard = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
           >
-            <CourseModeration />
+            <CourseTable
+              courses={[]} // Replace with actual course data
+              showActions={true}
+              onEdit={(id) => console.log("Edit course", id)}
+              onDelete={(id) => console.log("Delete course", id)}
+            />
           </motion.div>
         )}
 
@@ -219,7 +226,7 @@ const AdminDashboard = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
-          > 
+          >
             <PlatformSettings />
           </motion.div>
         )}

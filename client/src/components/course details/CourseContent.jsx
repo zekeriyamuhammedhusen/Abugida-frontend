@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ import {
 import VideoPlayer from "@/components/video-player";
 import QuizView from "../Quize/QuizView";
 import axios from "axios";
+import api from "@/lib/api";
 
 export const CourseContent = ({
   modules,
@@ -43,12 +45,12 @@ export const CourseContent = ({
       }
 
       try {
-        const enrollmentRes = await axios.get(
+        const enrollmentRes = await api.get(
           `/api/enrollments/${studentId}/${courseId}`
         );
         setHasAccess(enrollmentRes.data.access === true);
 
-        const progressRes = await axios.get(
+        const progressRes = await api.get(
           `/api/progress/${studentId}/${courseId}/completedLessons`,
           {
             validateStatus: (status) => status === 200 || status === 304 || status === 404,
@@ -104,7 +106,7 @@ export const CourseContent = ({
 
   const refreshCompletedLessons = async () => {
     try {
-      const res = await axios.get(
+      const res = await api.get(
         `/api/progress/${studentId}/${courseId}/completedLessons`,
         {
           validateStatus: (status) => status === 200 || status === 304 || status === 404,
@@ -151,13 +153,16 @@ export const CourseContent = ({
               previewLoading={previewLoading}
               hasAccess={hasAccess}
               isLessonCompleted={isLessonCompleted}
+              courseId={courseId}
             />
           ))
         )}
       </div>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+        {/* Provide an accessible description for the dialog content to satisfy Radix warning */}
+        <div id="lesson-preview-desc" className="sr-only">Preview and play lesson content</div>
+        <DialogContent aria-describedby="lesson-preview-desc" className="max-w-4xl p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-2">
             <div className="flex justify-between items-center">
               <DialogTitle>
@@ -216,6 +221,7 @@ const ModuleSection = ({
   previewLoading,
   hasAccess,
   isLessonCompleted,
+  courseId,
 }) => {
   return (
     <div className="border-b border-slate-200 dark:border-slate-800 last:border-b-0">
@@ -243,6 +249,7 @@ const ModuleSection = ({
           previewLoading={previewLoading}
           hasAccess={hasAccess}
           isLessonCompleted={isLessonCompleted}
+          courseId={courseId}
         />
       )}
     </div>
@@ -255,6 +262,7 @@ const ModuleLessons = ({
   previewLoading,
   hasAccess,
   isLessonCompleted,
+  courseId,
 }) => {
   return (
     <div className="bg-slate-50 dark:bg-slate-800/30 divide-y divide-slate-200 dark:divide-slate-800">
@@ -291,19 +299,28 @@ const ModuleLessons = ({
               )}
               
               {/* Lesson Title */}
-              <span className={`font-medium ${completed ? "text-muted-foreground" : ""}`}>
-                {isLocked && (
+              {isLocked ? (
+                <span className={`font-medium ${completed ? "text-muted-foreground" : ""}`}>
                   <span className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 text-xs px-2 py-0.5 rounded mr-2">
                     Premium
                   </span>
-                )}
-                {lesson.title}
-                {lesson.duration && !isLocked && (
-                  <span className="text-xs text-muted-foreground ml-2">
-                    {lesson.duration}
-                  </span>
-                )}
-              </span>
+                  {lesson.title}
+                  {lesson.duration && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {lesson.duration}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <Link to={`/learn/${courseId}/lesson/${lesson._id}`} className={`font-medium ${completed ? "text-muted-foreground" : "text-blue-600 hover:underline"}`}>
+                  {lesson.title}
+                  {lesson.duration && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {lesson.duration}
+                    </span>
+                  )}
+                </Link>
+              )}
             </div>
 
             <Button

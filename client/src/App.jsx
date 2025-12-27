@@ -33,6 +33,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
 import VerifyPayment from "./../src/components/Payment/VerifyPayment";
 import GetCertified from "./components/course details/GetCertified";
+import LessonPlayer from "./pages/LessonPlayer";
 
 const MainLayout = ({ children }) => (
   <>
@@ -165,6 +166,14 @@ const App = () => {
             </MainLayout>
           }
         />
+        <Route
+          path="/courses/:courseId/complete"
+          element={
+            <MainLayout>
+              <GetCertified />
+            </MainLayout>
+          }
+        />
 
         {/* Registration-specific OTP routes */}
         <Route
@@ -211,6 +220,7 @@ const App = () => {
         />
         <Route path="/profile" element={<Profile />} />
         <Route path="/users/:userId" element={<UserDetails />} />
+        <Route path="/learn/:courseId/lesson/:lessonId" element={<LessonPlayer />} />
       </Routes>
 
       <Toaster />

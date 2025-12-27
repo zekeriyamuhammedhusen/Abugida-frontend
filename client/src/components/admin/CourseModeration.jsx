@@ -22,6 +22,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import api from '@/lib/api';
 import { Eye, XCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,9 +34,8 @@ const CourseModeration = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/courses");
-        const data = await res.json();
-        setCourses(data);
+        const res = await api.get('/api/courses');
+        setCourses(res.data);
       } catch (error) {
         toast.error("Failed to fetch courses");
       } finally {
@@ -53,17 +53,7 @@ const CourseModeration = () => {
 
   const handleToggleVisibility = async (courseId, currentStatus) => {
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/courses/visibility/${courseId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isActive: !currentStatus }),
-        }
-      );
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      const res = await api.patch(`/api/courses/visibility/${courseId}`, { isActive: !currentStatus });
 
       setCourses((prev) =>
         prev.map((course) =>
@@ -73,7 +63,7 @@ const CourseModeration = () => {
         )
       );
 
-      toast.success(data.message);
+      toast.success(res.data.message);
     } catch (error) {
       toast.error("Failed to update course visibility");
     }

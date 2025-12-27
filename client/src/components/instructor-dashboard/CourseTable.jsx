@@ -8,8 +8,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ChevronRight, Plus } from "lucide-react";
+import { Edit, Trash2, Eye } from "lucide-react";
 
-const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, showActions = false }) => {
+const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, showActions = false, onEdit, onDelete }) => {
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
       <div className="flex justify-between items-center mb-4">
@@ -43,7 +44,7 @@ const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, sh
           <TableBody>
             {Array.isArray(courses) && courses.length > 0 ? (
               courses.map((course) => (
-                <TableRow key={course.id}>
+                <TableRow key={course._id || course.id}>
                   <TableCell className="font-medium">{course.title}</TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {course.students}
@@ -80,11 +81,26 @@ const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, sh
                     <TableCell>
                       {showActions ? (
                         <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
-                            Edit
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onDelete && onDelete(course._id || course.id)}
+                          >
+                            <Trash2 size={16} />
                           </Button>
-                          <Button variant="ghost" size="sm">
-                            View
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onEdit && onEdit(course._id || course.id)}
+                          >
+                            <Edit size={16} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.location.href = `/courses/${course._id || course.id}`}
+                          >
+                            <Eye size={16} />
                           </Button>
                         </div>
                       ) : (

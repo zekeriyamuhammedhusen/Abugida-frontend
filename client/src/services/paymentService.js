@@ -1,10 +1,8 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api/payment'; // Update with your backend URL
+import api from '@/lib/api';
 
 export const initializePayment = async (paymentData) => {
   try {
-    const response = await axios.post(`${API_URL}/initialize`, paymentData);
+    const response = await api.post(`/api/payment/initiate`, paymentData);
     return response.data;
   } catch (error) {
     console.error('Payment initialization error:', error);
@@ -14,7 +12,7 @@ export const initializePayment = async (paymentData) => {
 
 export const verifyPayment = async (txRef) => {
   try {
-    const response = await axios.get(`${API_URL}/verify?tx_ref=${txRef}`);
+    const response = await api.get(`/api/payment/verify-payment/${txRef}`);
     return response.data;
   } catch (error) {
     console.error('Payment verification error:', error);

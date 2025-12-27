@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import axios from "axios";
+import api from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
 
 const categories = [
@@ -77,14 +78,9 @@ const CourseDetailsTab = ({ form }) => {
         formData.append("courseImage", data.courseImage);
       }
   
-      const apiUrl = "http://localhost:5000/api/courses";
-  
-      // Post request to create the course
-      const response = await axios.post(apiUrl, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          // Authorization: `Bearer ${localStorage.getItem("token")}`, // Uncomment if needed
-        },
+      // Post request to create the course via central api (withCredentials)
+      const response = await api.post('/api/courses', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
   
       console.log("📦 Course created response:", response.data);

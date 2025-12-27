@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox ";
@@ -22,11 +23,8 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
   useEffect(() => {
     const checkEnrollment = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/enrollments/check?studentId=${studentId}&courseId=${courseId}`
-        );
-        const data = await response.json();
-        setIsEnrolled(data?.isEnrolled || false);
+        const res = await api.get(`/api/enrollments/check?studentId=${studentId}&courseId=${courseId}`);
+        setIsEnrolled(res.data?.isEnrolled || false);
       } catch (error) {
         console.error("Error checking enrollment:", error);
       } finally {
@@ -46,9 +44,8 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
     const fetchQuizQuestions = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/quizzes/${lesson_id}/questions`);
-        const data = await response.json();
-        setQuestions(data);
+        const response = await api.get(`/api/quizzes/${lesson_id}/questions`);
+        setQuestions(response.data);
       } catch (error) {
         toast.error("Failed to load quiz questions");
       } finally {
@@ -116,24 +113,13 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
 
   const saveProgress = async (finalScore) => {
     try {
-      const response = await fetch("http://localhost:5000/api/progress", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          studentId,
-          courseId,
-          lessonId: lesson_id,
-          score: finalScore,
-          completed: finalScore >= 50, // Only mark as completed if score >= 50%
-        }),
+      await api.post(`/api/progress`, {
+        studentId,
+        courseId,
+        lessonId: lesson_id,
+        score: finalScore,
+        completed: finalScore >= 50,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to save progress");
-      }
-
       return true;
     } catch (error) {
       console.error("Error saving progress:", error);

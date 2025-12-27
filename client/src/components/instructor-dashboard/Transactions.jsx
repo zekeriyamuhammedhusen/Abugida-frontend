@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { 
   Card, 
@@ -25,14 +26,7 @@ const Transactions = () => {
   const fetchWithdrawalHistory = async () => {
     try {
       setHistoryLoading(true);
-      const response = await axios.get(
-        "http://localhost:5000/api/withdrawals/history",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await api.get(`/api/withdrawals/history`);
       setWithdrawals(response.data.withdrawals || []);
     } catch (error) {
       toast.error("Failed to fetch transaction history");

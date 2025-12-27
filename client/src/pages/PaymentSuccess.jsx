@@ -78,8 +78,31 @@ const PaymentSuccess = () => {
 
         setPayment(paymentData);
       } catch (err) {
-        console.error('Verification error:', err);
-        setError(err.response?.data?.message || err.message || 'Payment verification failed');
+        // Log server response body if present for easier debugging
+        console.error('Verification error:', err.response?.data || err);
+          // Prefer server-provided error, then detailed chapaData if present, otherwise fall back to message
+          const serverData = err.response?.data;
+          let userMessage = err.message || 'Payment verification failed';
+
+          if (serverData) {
+            if (serverData.error) userMessage = serverData.error;
+            else if (serverData.details) {
+              // If Chapa verification details included, try to extract a friendly message
+              const details = serverData.details;
+              if (typeof details === 'string') userMessage = details;
+              else if (details?.data?.status) {
+                // common statuses: success, pending, failed
+                const st = details.data.status;
+                if (st === 'pending') userMessage = 'Payment pending — please complete any phone/SMS verification in the checkout page.';
+                else if (st === 'failed') userMessage = 'Payment failed — please try another payment method or contact support.';
+                else userMessage = `Payment status: ${st}`;
+              } else {
+                userMessage = JSON.stringify(details).slice(0, 300);
+              }
+            }
+          }
+
+          setError(userMessage);
       } finally {
         setLoading(false);
       }
@@ -102,7 +125,10 @@ const PaymentSuccess = () => {
       <div className="text-center mt-10">
         <h1 className="text-2xl font-bold text-red-600">Payment Verification Failed</h1>
         <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={() => navigate('/courses')}>Back to Courses</Button>
+        <div className="flex items-center justify-center gap-4">
+          <Button onClick={() => navigate(`/courses/${courseId}`)}>Retry Payment</Button>
+          <Button variant="outline" onClick={() => navigate('/courses')}>Back to Courses</Button>
+        </div>
       </div>
     );
   }

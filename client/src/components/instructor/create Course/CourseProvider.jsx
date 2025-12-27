@@ -10,8 +10,8 @@ export const useCourse = () => {
   return context;
 };
 
-const CourseProvider = ({ children }) => {
-  const [courseId, setCourseId] = useState(null);
+const CourseProvider = ({ children, initialCourseId = null }) => {
+  const [courseId, setCourseId] = useState(initialCourseId);
   const [moduleId, setModuleId] = useState(null);
   const [lessonId, setLessonId] = useState(null);
 

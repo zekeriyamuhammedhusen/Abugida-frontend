@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import StudentDetails from "../instructor-dashboard/StudentDetails";
 import { format } from 'date-fns';
+import api from '@/lib/api';
 
 const StudentManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,10 +47,8 @@ const StudentManagement = () => {
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/courses/${user._id}/courses/progress`
-        );
-        const data = await response.json();
+        const res = await api.get(`/api/courses/${user._id}/courses/progress`);
+        const data = res.data;
 
         console.log("API Response:", data);
 

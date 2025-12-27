@@ -8,12 +8,7 @@ import CurriculumManager from "./CurriculumManager";
 import PublishTab from "./PublishTab";
 import ReplaceLessonDialog from "./ReplaceLessonDialog";
 import { toast } from "sonner";
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URk || "http://localhost:5000/api",
-  withCredentials: true,
-});
+import api from '@/lib/api';
 
 const InnerCourseBuilder = ({
   activeTab,
@@ -240,7 +235,7 @@ const InnerCourseBuilder = ({
   );
 };
 
-const CourseBuilder = ({ onSave }) => {
+const CourseBuilder = ({ onSave, initialCourseId = null }) => {
   const [activeTab, setActiveTab] = useState("details");
   const [modules, setModules] = useState([]);
   const [selectedModule, setSelectedModule] = useState(null);
@@ -255,7 +250,7 @@ const CourseBuilder = ({ onSave }) => {
   const fileInputRef = useRef(null);
 
   return (
-    <CourseProvider>
+    <CourseProvider initialCourseId={initialCourseId}>
       <InnerCourseBuilder
         activeTab={activeTab}
         setActiveTab={setActiveTab}

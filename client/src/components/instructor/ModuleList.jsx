@@ -3,7 +3,7 @@ import { Plus, Trash2, MoveDown, MoveUp, Video, BarChart, Upload, ListPlus } fro
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import api from '@/lib/api';
 
 // Utility function to format file sizes
 const formatFileSize = (sizeInBytes) => {
@@ -61,10 +61,7 @@ const ModuleList = ({
       }
 
       const newModule = { title: "Introduction", description: "", lessons: [] };
-      const response = await axios.post(
-        `http://localhost:5000/api/courses/${courseId}/modules`,
-        newModule
-      );
+      const response = await api.post(`/api/courses/${courseId}/modules`, newModule);
 
       if (response.data && response.data._id) {
         localStorage.setItem("createdModuleId", response.data._id);

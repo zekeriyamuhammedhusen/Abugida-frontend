@@ -1,6 +1,7 @@
 // QuizFetcher.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import QuizView from "./QuizView"; // Adjust path if necessary
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -12,7 +13,7 @@ const QuizFetcher = ({ lessonId }) => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/quizzes/6800c842590c687df2300c2a/questions`);
+        const res = await api.get(`/api/quizzes/6800c842590c687df2300c2a/questions`);
         setQuestions(res.data);
       } catch (error) {
         console.error("Error fetching quiz questions:", error);

@@ -21,7 +21,7 @@ const Footer = () => {
               to="/" 
               className="text-2xl font-display font-bold text-slate-900 dark:text-white flex items-center"
             >
-              <span className="bg-abugida-500 text-white h-8 w-8 rounded-lg flex items-center justify-center mr-2 shadow-lg">F</span>
+              <span className="bg-abugida-500 text-white h-8 w-8 rounded-lg flex items-center justify-center mr-2 shadow-lg">A</span>
               Abugida
             </Link>
             <p className="mt-4 text-muted-foreground text-sm">

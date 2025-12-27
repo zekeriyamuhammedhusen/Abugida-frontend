@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -15,10 +16,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/auth/me`,
-          { withCredentials: true }
-        );
+        const res = await api.get(`/api/auth/me`);
         setUser(res.data);
       } catch (err) {
         setUser(null);
@@ -33,22 +31,11 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     setLoading(true);
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
-        { email, password },
-        { withCredentials: true }
-      );
-      console.log('Setting user:', res.data.user);
-      // Update user state
+      const res = await api.post(`/api/auth/login`, { email, password });
       setUser(res.data.user);
-      // toast.success("Login successful!");
-  
-      // Navigate to the appropriate dashboard
       navigate(getDashboardPath(res.data.user?.role));
-  
       return res.data;
     } catch (error) {
-      // toast.error(error.response?.data?.message || "Login failed");
       throw error;
     } finally {
       setLoading(false);
@@ -59,11 +46,7 @@ export const AuthProvider = ({ children }) => {
   // Logout function
   const logout = async () => {
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/logout`,
-        {},
-        { withCredentials: true }
-      );
+      await api.post(`/api/auth/logout`);
       setUser(null);
       toast.success("Logged out successfully");
       navigate("/login");

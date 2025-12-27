@@ -39,7 +39,8 @@ const handleSubmit = async (e) => {
   try {
     // Use the login function from AuthContext instead of direct axios call
     const response = await login(email, password);
-    if (!response || !response.token || !response.user) {
+    // Server uses HttpOnly cookie for auth and returns { message, user }
+    if (!response || !response.user) {
       throw new Error("Invalid login response");
     }
 

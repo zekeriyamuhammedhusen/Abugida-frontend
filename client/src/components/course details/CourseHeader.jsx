@@ -9,8 +9,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "@/lib/api";
 import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 export const CourseHeader = ({
   course,
@@ -27,20 +28,14 @@ export const CourseHeader = ({
   const [reviewError, setReviewError] = useState(null);
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  const token = localStorage.getItem("token");
+  const { user } = useAuth();
 
   // Check if already enrolled
   useEffect(() => {
     const checkEnrollment = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:5000/api/enrollments/check?studentId=${user._id}&courseId=${course._id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const res = await api.get(
+          `/api/enrollments/check?studentId=${user._id}&courseId=${course._id}`
         );
 
         if (res.data?.isEnrolled === true) {
@@ -60,46 +55,34 @@ export const CourseHeader = ({
   useEffect(() => {
     const fetchStudentCount = async () => {
       try {
-        const res = await axios.get(`/api/courses/${course._id}/student-count`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await api.get(`/api/courses/${course._id}/student-count`);
         setStudentCount(res.data.studentCount);
       } catch (err) {
         console.error("Failed to fetch student count", err);
       }
     };
 
-    if (course._id) {
+    if (course?._id) {
       fetchStudentCount();
     }
-  }, [course._id, token]);
+  }, [course?._id]);
 
   // Fetch review stats
   useEffect(() => {
     const fetchReviewStats = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/review/${course._id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        });
-        setReviewStats(
-          res.data.reviewStats || { totalReviews: 0, avgRating: "N/A" }
-        );
+        const res = await api.get(`/api/review/${course._id}`);
+        setReviewStats(res.data.reviewStats || { totalReviews: 0, avgRating: "N/A" });
       } catch (error) {
         console.error("Failed to fetch review stats:", error?.response?.data || error.message);
         setReviewError("Failed to load reviews");
         setReviewStats({ totalReviews: 0, avgRating: "N/A" });
       }
     };
-
-    if (course._id) {
+    if (course?._id) {
       fetchReviewStats();
     }
-  }, [course._id, token]);
+  }, [course?._id]);
 
   const handleEnroll = async () => {
     setLoading(true);
@@ -110,20 +93,12 @@ export const CourseHeader = ({
         return;
       }
 
-      const res = await axios.post(
-        "http://localhost:5000/api/payment/initiate",
-        {
-          amount: course.price,
-          courseId: course._id,
-          email: user.email,
-          fullName: user.name,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await api.post(`/api/payment/initiate`, {
+        amount: course.price,
+        courseId: course._id,
+        email: user.email,
+        fullName: user.name,
+      });
 
       if (res.data?.checkoutUrl) {
         window.location.replace(res.data.checkoutUrl);
@@ -183,11 +158,11 @@ export const CourseHeader = ({
             </div>
 
             <div className="flex items-center mb-6">
-              <div className="h-10 w-10 rounded-full bg-white/20 mr-3 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-full bg-white/20 mr-3 flex items-center justify-center">
                 <span className="text-xl font-medium">
-                  {instructorName
+                  {(instructorName || "")
                     .split(" ")
-                    .map((n) => n[0].toUpperCase())
+                    .map((n) => (n ? n[0].toUpperCase() : ""))
                     .join("")}
                 </span>
               </div>
@@ -208,8 +183,8 @@ export const CourseHeader = ({
             <div className="md:w-96">
               <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-xl">
                 <img
-                  src={course.thumbnail.url}
-                  alt={course.title}
+                  src={course?.thumbnail?.url || "/default-course-thumb.jpg"}
+                  alt={course?.title || "Course thumbnail"}
                   className="w-full h-52 object-cover"
                 />
                 <div className="p-6">

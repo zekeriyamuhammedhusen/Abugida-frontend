@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import api from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 
 const CreateCourse = () => {
@@ -95,6 +96,7 @@ const CreateCourse = () => {
     setIsSubmitting(true);
     setError('');
 
+    console.log('Submitting course...');
     try {
       const formData = new FormData();
 
@@ -108,28 +110,35 @@ const CreateCourse = () => {
       formData.append('technicalRequirements', course.technicalRequirements);
       formData.append('modules', JSON.stringify(course.modules));
 
-      // FIXED: Thumbnail upload
+      // Thumbnail upload
       if (files.thumbnail) {
         formData.append('thumbnail', files.thumbnail[0]);
       }
 
-      // Lesson videos
-      if (files.lessonVideos?.length > 0) {
-        Array.from(files.lessonVideos).forEach(video =>
-          formData.append('lessonVideo', video)
-        );
-      }
-      const res = await axios.post(
-        'http://localhost:5000/api/courses',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}`
+      // Create course (no lesson videos yet)
+      const res = await api.post('/api/courses', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      console.log('Course response:', res);
+
+      // Upload lesson videos to each lesson after course creation
+      if (files.lessonVideos?.length > 0 && res.data.lessons) {
+        for (let i = 0; i < files.lessonVideos.length; i++) {
+          const lessonId = res.data.lessons[i]?._id;
+          if (lessonId) {
+            const videoForm = new FormData();
+            videoForm.append('video', files.lessonVideos[i]);
+            try {
+              const videoRes = await api.put(`/api/lessons/${lessonId}/video`, videoForm, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+              });
+              console.log(`Video upload response for lesson ${lessonId}:`, videoRes);
+            } catch (videoErr) {
+              console.error(`Video upload failed for lesson ${lessonId}:`, videoErr);
+            }
           }
         }
-      );
-
+      }
 
       navigate(`/courses/${res.data.course._id}`);
     } catch (err) {
@@ -159,10 +168,11 @@ const CreateCourse = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div>
-              <label className="block text-sm font-medium">Title*</label>
+              <label htmlFor="title" className="block text-sm font-medium">Title*</label>
               <input
-                type="text"
+                id="title"
                 name="title"
+                type="text"
                 value={course.title}
                 onChange={handleInputChange}
                 required
@@ -171,10 +181,11 @@ const CreateCourse = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Category*</label>
+              <label htmlFor="category" className="block text-sm font-medium">Category*</label>
               <input
-                type="text"
+                id="category"
                 name="category"
+                type="text"
                 value={course.category}
                 onChange={handleInputChange}
                 required
@@ -183,8 +194,9 @@ const CreateCourse = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Level</label>
+              <label htmlFor="level" className="block text-sm font-medium">Level</label>
               <select
+                id="level"
                 name="level"
                 value={course.level}
                 onChange={handleInputChange}
@@ -197,10 +209,11 @@ const CreateCourse = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Price ($)</label>
+              <label htmlFor="price" className="block text-sm font-medium">Price ($)</label>
               <input
-                type="number"
+                id="price"
                 name="price"
+                type="number"
                 value={course.price}
                 onChange={handleInputChange}
                 min="0"
@@ -211,8 +224,9 @@ const CreateCourse = () => {
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium">Description*</label>
+            <label htmlFor="description" className="block text-sm font-medium">Description*</label>
             <textarea
+              id="description"
               name="description"
               value={course.description}
               onChange={handleInputChange}
@@ -222,8 +236,9 @@ const CreateCourse = () => {
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium">Thumbnail Image</label>
+            <label htmlFor="thumbnail" className="block text-sm font-medium">Thumbnail Image</label>
             <input
+              id="thumbnail"
               type="file"
               name="thumbnail"
               accept="image/*"
@@ -251,6 +266,7 @@ const CreateCourse = () => {
             <div key={mIndex} className="border-b pb-4 mb-4">
 
               <input
+                name={`module-${mIndex}-title`}
                 type="text"
                 placeholder="Module Title"
                 value={module.title}
@@ -259,6 +275,7 @@ const CreateCourse = () => {
               />
 
               <input
+                name={`module-${mIndex}-description`}
                 type="text"
                 placeholder="Description"
                 value={module.description}
@@ -287,6 +304,7 @@ const CreateCourse = () => {
                 <div key={lIndex} className="mt-3 p-3 border rounded-md bg-gray-50">
 
                   <input
+                    name={`lesson-${mIndex}-${lIndex}-title`}
                     type="text"
                     placeholder="Lesson Title"
                     value={lesson.title}
@@ -295,6 +313,7 @@ const CreateCourse = () => {
                   />
 
                   <textarea
+                    name={`lesson-${mIndex}-${lIndex}-description`}
                     placeholder="Description"
                     value={lesson.description}
                     onChange={(e) => updateLesson(mIndex, lIndex, 'description', e.target.value)}
@@ -303,6 +322,7 @@ const CreateCourse = () => {
 
                   {lesson.lessonType === 'video' && (
                     <input
+                      name={`lesson-${mIndex}-${lIndex}-duration`}
                       type="number"
                       placeholder="Duration (minutes)"
                       value={lesson.duration}
@@ -324,6 +344,7 @@ const CreateCourse = () => {
                       {lesson.quizQuestions.map((q, qIndex) => (
                         <div key={qIndex} className="ml-3 p-2 border rounded bg-white mb-2">
                           <input
+                            name={`question-${mIndex}-${lIndex}-${qIndex}`}
                             type="text"
                             placeholder="Question"
                             value={q.question}
@@ -335,10 +356,13 @@ const CreateCourse = () => {
                             <div key={optIndex} className="flex items-center mb-1">
                               <input
                                 type="radio"
+                                name={`q-${mIndex}-${lIndex}-correct`}
+                                id={`q-${mIndex}-${lIndex}-opt-${optIndex}`}
                                 checked={q.correctAnswer === optIndex}
                                 onChange={() => updateQuizQuestion(mIndex, lIndex, qIndex, 'correctAnswer', optIndex)}
                               />
                               <input
+                                name={`q-${mIndex}-${lIndex}-option-${optIndex}`}
                                 type="text"
                                 value={opt}
                                 onChange={(e) =>
@@ -375,7 +399,7 @@ const CreateCourse = () => {
               multiple
               onChange={handleFileChange}
             />
-            <p className="text-sm text-gray-500 mt-1">Upload one video for each video lesson.</p>
+            <p className="text-sm text-gray-500 mt-1">Upload one video for each video lesson. Videos will be matched to lessons in the order you add them.</p>
           </div>
         )}
 

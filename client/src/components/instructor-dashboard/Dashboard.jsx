@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -69,15 +70,7 @@ const Dashboard = () => {
       const { startDate, endDate } = getDateRange(dateFilter);
       const query = startDate && endDate ? `?startDate=${startDate}&endDate=${endDate}` : "";
 
-      const response = await axios.get(
-        `http://localhost:5000/api/withdrawals/InstructorEarnings${query}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
+      const response = await api.get(`/api/withdrawals/InstructorEarnings${query}`);
       setEarningsData(response.data);
     } catch (error) {
       toast.error("Failed to fetch earnings data");

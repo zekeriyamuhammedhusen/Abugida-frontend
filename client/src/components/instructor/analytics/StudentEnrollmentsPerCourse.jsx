@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -78,17 +79,11 @@ const StudentEnrollmentsPerCourse = ({ timeRange }) => {
   useEffect(() => {
     const fetchEnrollments = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const base =
-          import.meta.env.VITE_REACT_APP_BASE_URL ||
-          "http://localhost:5000";
-        const url = `${base}/api/graphs/enrollments-per-course${
+        const url = `/api/graphs/enrollments-per-course${
           timeRange ? `?range=${timeRange}` : ""
         }`;
 
-        const response = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get(url);
 
         if (!Array.isArray(response.data)) {
           throw new Error("Unexpected response format");
