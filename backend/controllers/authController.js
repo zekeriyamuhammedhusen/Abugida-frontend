@@ -79,12 +79,17 @@ export const loginUser = async (req, res) => {
     const token = generateToken(user._id, user.role);
 
     // Store token in HttpOnly cookie
-    res.cookie('token', token, {
+    // Cookie options: for local development use SameSite=Lax and secure=false
+    // In production (cross-site) set SameSite=None and secure=true so browsers accept the cookie.
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: 'strict',
+      secure: isProd, // must be true for SameSite=None in modern browsers
+      sameSite: isProd ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
+    };
+
+    res.cookie('token', token, cookieOptions);
 
     res.status(200).json({ message: "Login successful", user });
   } catch (error) {

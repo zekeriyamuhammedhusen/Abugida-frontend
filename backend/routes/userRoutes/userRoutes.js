@@ -9,7 +9,13 @@ router.get('/profile', protect, getProfile);
 router.put(
   '/profile',
   protect,
-  uploadImage.single('profilePic'),
+  (req, res, next) => {
+    // Only invoke multer when the request is multipart; avoid busboy errors on JSON bodies
+    if (req.is('multipart/form-data')) {
+      return uploadImage.single('profilePic')(req, res, next);
+    }
+    return next();
+  },
   updateProfile
 );
 

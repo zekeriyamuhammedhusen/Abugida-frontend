@@ -5,12 +5,16 @@ import {
   updateLesson,
   reorderLessons,
   deleteLesson,
-  convertLessonType
+  convertLessonType,
+  getLessonById
 } from '../../controllers/Instructor-controller/lessonController.js';
 import { protect, instructor } from '../../middleware/authMiddleware.js';
 import { uploadVideo } from '../../middleware/uploadToCloudinary.js';
 
 const router = express.Router();
+// Student: Get lesson by ID
+router.route('/:id')
+  .get(protect, getLessonById);
  
 router.route('/')
   .post(protect, instructor, createLesson);

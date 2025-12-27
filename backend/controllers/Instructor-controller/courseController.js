@@ -297,34 +297,45 @@ export const updateCourse = asyncHandler(async (req, res) => {
 });
 
 export const setCourseStatus = asyncHandler(async (req, res) => {
-  const course = await Course.findById(req.params.courseId);
+  try {
+    const { courseId } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ message: 'Invalid courseId' });
+    }
 
-  if (!course) {
-    res.status(404);
-    throw new Error("Course not found");
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    if (course.instructor.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: 'Not authorized to update this course' });
+    }
+
+    // Expecting a boolean
+    const { published } = req.body;
+
+    if (typeof published !== 'boolean') {
+      return res.status(400).json({ message: 'Published status must be a boolean value' });
+    }
+
+    course.published = published;
+    const updatedCourse = await course.save();
+
+    return res.status(200).json({
+      message: `Course ${published ? 'published' : 'saved as draft'} successfully`,
+      course: updatedCourse,
+    });
+  } catch (error) {
+    console.error('setCourseStatus error:', error);
+    return res.status(500).json({ message: 'Failed to update course status', error: error.message });
   }
-
-  if (course.instructor.toString() !== req.user._id.toString()) {
-    res.status(401);
-    throw new Error("Not authorized to update this course");
-  }
-
-  // Expecting a boolean
-  const { published } = req.body;
-
-  if (typeof published !== "boolean") {
-    res.status(400);
-    throw new Error("Published status must be a boolean value");
-  }
-
-  course.published = published;
-  const updatedCourse = await course.save();
-
-  res.status(200).json({
-    message: `Course ${published ? "published" : "saved as draft"} successfully`,
-    course: updatedCourse,
-  });
 });
 
  
@@ -393,18 +404,34 @@ export const getInstructorCoursesWithProgress = async (req, res) => {
       const enrollmentRecords = await Enrollment.find({ courseId: course._id })
         .populate('studentId', 'name email');  // Populate student details
 
-      const studentsProgress = progressRecords.map(record => {
-        const enrollment = enrollmentRecords.find(enroll => enroll.studentId._id.toString() === record.studentId._id.toString());
+      // Build a map of students from enrollment records (ensures students with no progress are included)
+      const studentMap = new Map();
+      enrollmentRecords.forEach((enroll) => {
+        const sid = enroll.studentId?._id ? enroll.studentId._id.toString() : String(enroll.studentId);
+        studentMap.set(sid, {
+          studentId: enroll.studentId?._id || enroll.studentId,
+          name: enroll.studentId?.name || 'Unknown',
+          email: enroll.studentId?.email || 'Unknown',
+          enrolledAt: enroll.enrolledAt || null,
+          completedLessons: [],
+          progressPercentage: 0,
+        });
+      });
 
-        return {
+      // Merge progress records (overwrite defaults where present)
+      progressRecords.forEach((record) => {
+        const sid = record.studentId?._id ? record.studentId._id.toString() : String(record.studentId);
+        studentMap.set(sid, {
           studentId: record.studentId._id,
           name: record.studentId.name,
           email: record.studentId.email,
-          enrolledAt: enrollment ? enrollment.enrolledAt : null,  // Include enrollment date
-          completedLessons: record.completedLessons,  // Include completed lessons
-          progressPercentage: record.progressPercentage,
-        };
+          enrolledAt: studentMap.get(sid)?.enrolledAt || null,
+          completedLessons: record.completedLessons || [],
+          progressPercentage: record.progressPercentage || 0,
+        });
       });
+
+      const studentsProgress = Array.from(studentMap.values());
 
       return {
         courseId: course._id,

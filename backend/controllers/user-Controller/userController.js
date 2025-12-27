@@ -3,7 +3,8 @@ import User from '../../models/User.js';
 
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select('-password'); // Use req.params.userId
+    // Use authenticated user id from auth middleware
+    const user = await User.findById(req.user._id).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -23,6 +24,14 @@ export const updateProfile = async (req, res) => {
   try {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Guard against duplicate emails when updating
+    if (email && email !== user.email) {
+      const existing = await User.findOne({ email });
+      if (existing && existing._id.toString() !== userId.toString()) {
+        return res.status(400).json({ message: 'Email is already in use' });
+      }
+    }
 
     user.name = name || user.name;
     user.email = email || user.email;

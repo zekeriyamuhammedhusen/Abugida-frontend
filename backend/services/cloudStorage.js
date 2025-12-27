@@ -25,26 +25,31 @@ export const uploadToCloudinary = async (filePath, options = {}) => {
 export const deleteFromCloudinary = async (publicId, resourceType = 'image') => {
   try {
     await cloudinary.uploader.destroy(publicId, {
-      resource_type: resourceType
+      resource_type: resourceType,
+      invalidate: true
     });
   } catch (error) {
-    console.error('Cloudinary delete error:', error);
+    console.error('Delete error:', error);
     throw error;
   }
 };
 
 export const uploadVideoToCloudinary = async (filePath, options = {}) => {
   try {
-    const result = await cloudinary.uploader.upload(filePath, {
+    // Upload video directly to Cloudinary (true storage target)
+    const uploaded = await cloudinary.uploader.upload(filePath, {
       resource_type: 'video',
-      ...options
+      public_id: options.public_id,
+      folder: options.folder,
+      overwrite: true,
+      invalidate: true
     });
     return {
-      url: result.secure_url,
-      publicId: result.public_id
+      url: uploaded.secure_url,
+      publicId: uploaded.public_id
     };
   } catch (error) {
-    console.error('Cloudinary video upload error:', error);
+    console.error('Video upload error:', error);
     throw error;
   }
 };

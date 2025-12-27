@@ -35,6 +35,6 @@ router.get('/instructor/:instructorId/courses', getInstructorCourses);
   .get(getCourseById)
   .put(protect, instructor, upload.single('thumbnail'), updateCourse)
   .delete(protect, instructor, deleteCourse);
-router.get('/courses', getAllCourses);
+router.get('/courses', getAllCourses,);
 
 export default router;

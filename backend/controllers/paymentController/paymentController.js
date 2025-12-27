@@ -1,4 +1,5 @@
 import axios from 'axios';
+import crypto from 'crypto';
 import Payment from '../../models/Payment.js';
 import Enrollment from '../../models/Enrollment.js';
 import Transaction from '../../models/Transaction.js';
@@ -12,200 +13,291 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/* ============================
+   Helper: drawConsolidatedTable
+   Draws small labeled rows into PDFDocument.
+   Returns the Y position after drawing.
+   ============================ */
+function drawConsolidatedTable(doc, sections, startX = 50, startY = 130, lineHeight = 16) {
+  let y = startY;
+
+  sections.forEach((section) => {
+    // Section title
+    doc.fontSize(12).fillColor('#2C3E50').text(section.title, startX, y);
+    y += lineHeight;
+
+    section.rows.forEach((row) => {
+      // label
+      doc.fontSize(10).fillColor('#7f8c8d').text(`${row.label}:`, startX, y, { continued: true });
+      // value
+      const valueX = startX + 150;
+      const valueOpts = { width: 350 };
+      if (row.highlight) {
+        doc.fontSize(11).fillColor('#000').text(String(row.value), valueX, y, valueOpts);
+      } else {
+        doc.fontSize(10).fillColor('#34495e').text(String(row.value), valueX, y, valueOpts);
+      }
+      y += lineHeight;
+    });
+
+    y += 8; // space between sections
+    // horizontal rule
+    doc.moveTo(startX, y).lineTo(550, y).stroke('#e0e0e0').lineWidth(0.5);
+    y += 12;
+  });
+
+  return y;
+}
+
+/* ============================
+   INITIATE PAYMENT
+   Creates Payment (pending) and initializes Chapa transaction
+   ============================ */
 export const initiatePayment = async (req, res) => {
   const { amount, email, fullName, courseId } = req.body;
-  const studentId = req.user?._id; // Grab from authenticated user
+  const studentId = req.user?._id;
   const tx_ref = `Abugida-${Date.now()}`;
+
+  // Normalize and validate amount
+  const amountNum = Number(amount);
+  if (Number.isNaN(amountNum) || amountNum <= 0) {
+    return res.status(400).json({ error: 'Invalid amount. Amount must be a positive number.' });
+  }
 
   if (!studentId) {
     return res.status(401).json({ error: 'Unauthorized. Student ID missing.' });
   }
 
-  // Validate required fields
   if (!amount || !email || !fullName || !courseId) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
 
-  // Validate environment variables
-  if (!process.env.BACKEND_URL || !process.env.CHAPA_SECRET_KEY) {
+  if (!process.env.BACKEND_URL || !process.env.CHAPA_SECRET_KEY || !process.env.FRONTEND_URL) {
     console.error('Missing required environment variables');
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  // Log email for debugging
-  console.log('Initiating payment with email:', email);
-  console.log('Email length:', email.length);
-  console.log('Email content:', email);
-  console.log('Chapa callback_url:', `${process.env.BACKEND_URL}/api/payments/webhook`);
-
   try {
-    // Step 1: Create a payment record in the database with 'pending' status
-    await Payment.create({ studentId, courseId, amount, tx_ref, status: 'pending' });
+    // create DB record
+    await Payment.create({
+      studentId,
+      courseId,
+      amount: amountNum,
+      tx_ref,
+      status: 'pending',
+    });
 
-    // Step 2: Call Chapa API to initialize the transaction
+    // initialize with Chapa (use numeric amount)
+    const initPayload = {
+      amount: amountNum,
+      currency: 'ETB',
+      email,
+      first_name: fullName,
+      tx_ref,
+      callback_url: `${process.env.BACKEND_URL}/api/payment/webhook`,
+      return_url: `${process.env.FRONTEND_URL}/payment-success?course=${courseId}&tx_ref=${tx_ref}`,
+      customization: {
+        title: 'Abugida Payment',
+        description: 'Payment for Course Enrollment',
+      },
+    };
+
     const response = await axios.post(
       'https://api.chapa.co/v1/transaction/initialize',
-      {
-        amount,
-        currency: 'ETB',
-        email,
-        first_name: fullName,
-        tx_ref,
-        callback_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
-        return_url: `${process.env.FRONTEND_URL}/payment-success?course=${courseId}&tx_ref=${tx_ref}`,
-        customization: {
-          title: 'Abugida Payment',
-          description: 'Payment for Course Enrollment',
-        },
-      },
+      initPayload,
       {
         headers: {
           Authorization: `Bearer ${process.env.CHAPA_SECRET_KEY}`,
+          'Content-Type': 'application/json',
         },
-        timeout: 10000, // 10 seconds
+        timeout: 10000,
       }
     );
 
-    // Step 3: Check if the Chapa API response is successful
     const chapaRes = response.data;
-    if (chapaRes.status === 'success') {
-      return res.json({ checkoutUrl: chapaRes.data.checkout_url });
+    console.log('Chapa initialize response:', chapaRes);
+
+    if (chapaRes?.status === 'success' && chapaRes?.data?.checkout_url) {
+      return res.status(200).json({ checkoutUrl: chapaRes.data.checkout_url, tx_ref });
     } else {
-      console.error('CHAPA Error (status not success):', chapaRes);
-      return res.status(400).json({
-        error: 'Failed to initialize payment',
-        details: chapaRes,
-      });
+      console.error('CHAPA Init failed:', chapaRes);
+      return res.status(400).json({ error: 'Failed to initialize payment', details: chapaRes });
     }
   } catch (error) {
-    // Handle any unexpected errors in the request process
     console.error('CHAPA Error Response:', error.response?.data || error.message);
-    if (error.response?.data) {
-      console.log('Full Chapa Response Data:', error.response.data);
-    }
-    res.status(500).json({ error: 'Payment initiation failed' });
+    return res.status(500).json({ error: 'Payment initiation failed', details: error.response?.data || error.message });
   }
 };
 
+/* ============================
+   CHAPA WEBHOOK
+   Expects express.json() so req.body is parsed JSON.
+   Chapa format:
+     { status: "success", data: { status: "success", tx_ref: "...", ... } }
+   ============================ */
 export const chapaWebhook = async (req, res) => {
-  const { event, data } = req.body;
+  // When using express.raw middleware, req.body is a Buffer containing the raw JSON bytes.
+  const rawBody = req.body;
 
-  console.log('Webhook Received:', {
-    headers: req.headers,
-    body: JSON.stringify(req.body, null, 2),
-  });
+  console.log('Webhook Received headers:', req.headers);
 
-  if (event === 'charge.completed' && data.status === 'success') {
-    const { tx_ref } = data;
+  // If we have a raw Buffer, try to verify signature if configured
+  let parsedBody;
+  try {
+    if (Buffer.isBuffer(rawBody)) {
+      // Verify signature if secret provided
+      const secret = process.env.CHAPA_WEBHOOK_SECRET;
+      if (secret) {
+        // Accept common header names
+        const sigHeader = req.headers['x-chapa-signature'] || req.headers['x-signature'] || req.headers['x-hub-signature'] || req.headers['signature'];
+        if (!sigHeader) {
+          console.warn('CHAPA webhook secret configured but no signature header present');
+          return res.status(400).send('Missing signature');
+        }
 
-    try {
-      // Update payment status
-      const payment = await Payment.findOneAndUpdate(
-        { tx_ref },
-        { status: 'success', chapaData: data },
-        { new: true }
-      );
-
-      if (!payment) {
-        console.error('Payment not found for tx_ref:', tx_ref);
-        return res.status(404).send('Payment not found');
+        // Some providers prefix the signature with algo (e.g., 'sha256=...'). Handle that.
+        const receivedSig = String(sigHeader).replace(/^sha256=/i, '').trim();
+        const computed = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+        if (!crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(receivedSig, 'hex'))) {
+          console.error('Webhook signature mismatch');
+          return res.status(401).send('Invalid signature');
+        }
       }
 
-       const course = await Course.findById(payment.courseId);
-      if (!course) {
-        console.error('Course not found for courseId:', payment.courseId);
-        return res.status(404).send('Course not found');
-      }
+      parsedBody = JSON.parse(rawBody.toString('utf8'));
+    } else {
+      // Fallback: body already parsed as JSON (if someone changed middleware)
+      parsedBody = req.body;
+    }
+  } catch (err) {
+    console.error('Failed to parse webhook body or verify signature:', err.message);
+    return res.status(400).send('Invalid payload');
+  }
 
-      const instructorId = course.instructor;
-      if (!instructorId) {
-        console.error('Instructor not found for course:', payment.courseId);
-        return res.status(404).send('Instructor not found for the course');
-      }
+  console.log('Webhook Received body:', JSON.stringify(parsedBody, null, 2));
 
-       const instructorShare = payment.amount * 0.8;
-      const platformShare = payment.amount * 0.2;
-      const existingTx = await Transaction.findOne({ paymentId: payment._id });
+  // Validate Chapa success
+  if (!parsedBody || parsedBody.status !== 'success' || parsedBody.data?.status !== 'success') {
+    console.error('Invalid webhook event or status', { parsedBody });
+    return res.status(400).send('Invalid webhook');
+  }
 
-      if (!existingTx) {
-        await Transaction.create({
-          studentId: payment.studentId,
-          courseId: payment.courseId,
-          instructorId,
-          paymentId: payment._id,
-          amountPaid: payment.amount,
-          instructorShare,
-          platformShare,
-          status: 'completed',
-        });
-        
+  const data = parsedBody.data;
+  const tx_ref = data.tx_ref?.toString()?.trim();
 
-        // Update instructor balance
-        await User.findByIdAndUpdate(
-          instructorId,
-          { $inc: { availableBalance: instructorShare } }
-        );
-        console.log('Instructor balance updated for instructorId:', instructorId);
-      } else {
-        console.log('Transaction already exists for paymentId:', payment._id);
-      }
+  try {
+    // Find existing payment first to support idempotency checks
+    let payment = await Payment.findOne({ tx_ref });
 
-      // Create enrollment
-      const alreadyEnrolled = await Enrollment.findOne({
+    if (!payment) {
+      console.error('Payment not found for tx_ref:', tx_ref);
+      return res.status(404).send('Payment not found');
+    }
+
+    // If already marked success, skip processing
+    if (payment.status === 'success') {
+      console.log('Webhook: payment already marked success for tx_ref:', tx_ref);
+      return res.status(200).send('Already processed');
+    }
+
+    // Update payment record to success and attach Chapa data
+    const updatedPayment = await Payment.findByIdAndUpdate(
+      payment._id,
+      { status: 'success', chapaData: data },
+      { new: true }
+    );
+    payment = updatedPayment;
+
+    // Prevent duplicate transaction processing
+    const existingTx = await Transaction.findOne({ paymentId: payment._id });
+    if (existingTx) {
+      console.log('Transaction already exists for paymentId:', payment._id);
+      return res.status(200).send('Already processed');
+    }
+
+    // Ensure course exists
+    const course = await Course.findById(payment.courseId);
+    if (!course) {
+      console.error('Course not found for courseId:', payment.courseId);
+      return res.status(404).send('Course not found');
+    }
+    const instructorId = course.instructor;
+
+    if (!instructorId) {
+      console.error('Instructor not found for course:', payment.courseId);
+      return res.status(404).send('Instructor not found for the course');
+    }
+
+    // Payment splitting
+    const instructorShare = Number(payment.amount) * 0.8;
+    const platformShare = Number(payment.amount) * 0.2;
+
+    // Create transaction
+    const tx = await Transaction.create({
+      studentId: payment.studentId,
+      courseId: payment.courseId,
+      instructorId,
+      paymentId: payment._id,
+      amountPaid: payment.amount,
+      instructorShare,
+      platformShare,
+      status: 'completed',
+    });
+
+    console.log('Transaction created:', tx._id);
+
+    // Update instructor balance
+    await User.findByIdAndUpdate(instructorId, { $inc: { availableBalance: instructorShare } });
+    console.log('Instructor balance updated for instructorId:', instructorId);
+
+    // Create enrollment if not exists
+    const alreadyEnrolled = await Enrollment.findOne({
+      studentId: payment.studentId,
+      courseId: payment.courseId,
+    });
+
+    if (!alreadyEnrolled) {
+      await Enrollment.create({
         studentId: payment.studentId,
         courseId: payment.courseId,
+        paymentId: payment._id,
+        enrolledAt: new Date(),
       });
-
-      if (!alreadyEnrolled) {
-        await Enrollment.create({
-          studentId: payment.studentId,
-          courseId: payment.courseId,
-          paymentId: payment._id,
-        });
-        console.log('Enrollment created for studentId:', payment.studentId);
-      } else {
-        console.log('Student already enrolled for courseId:', payment.courseId);
-      }
-
-      return res.status(200).send('Payment, transaction, and enrollment successful');
-    } catch (error) {
-      console.error('Webhook Processing Error:', error.message, error.stack);
-      if (error.response) {
-        console.error('Chapa API Error:', error.response.data);
-      } else if (error.request) {
-        console.error('No response from Chapa API:', error.request);
-      }
-      return res.status(500).send('Server error');
+      console.log('Enrollment created for studentId:', payment.studentId);
+    } else {
+      console.log('Student already enrolled for courseId:', payment.courseId);
     }
-  }
 
-  console.error('Invalid webhook event or status:', { event, status: data?.status });
-  res.status(400).send('Invalid webhook');
+    // Respond 200 to Chapa
+    return res.status(200).send('Payment, transaction, and enrollment successful');
+  } catch (error) {
+    console.error('Webhook Processing Error:', error.message, error.stack);
+    return res.status(500).send('Server error');
+  }
 };
 
+/* ============================
+   VERIFY PAYMENT
+   Used when user returns to frontend (optional)
+   ============================ */
 export const verifyPayment = async (req, res) => {
   const { tx_ref } = req.params;
-  const { course_id } = req.query;
+  // Accept either `course_id` or `course` (return_url uses `course` currently)
+  const course_id = req.query.course_id || req.query.course;
 
-  // Log incoming data for debugging
   console.log('Verify Payment - Incoming tx_ref:', tx_ref);
   console.log('Verify Payment - Incoming course_id:', course_id);
 
-  // Validate required data
   if (!tx_ref) {
-    console.error('Verify Payment - Missing tx_ref');
     return res.status(400).json({ error: 'Transaction reference (tx_ref) is required' });
   }
-
   if (!course_id) {
-    console.error('Verify Payment - Missing course_id');
     return res.status(400).json({ error: 'Course ID is required' });
   }
 
   try {
-    // Call Chapa to verify transaction
     const chapaResponse = await axios.get(
-      `https://api.chapa.co/v1/transaction/verify/${tx_ref}`,
+      `https://api.chapa.co/v1/transaction/verify/${encodeURIComponent(tx_ref)}`,
       {
         headers: {
           Authorization: `Bearer ${process.env.CHAPA_SECRET_KEY}`,
@@ -217,16 +309,12 @@ export const verifyPayment = async (req, res) => {
     const chapaData = chapaResponse.data;
     console.log('Verify Payment - Chapa Verification Response:', chapaData);
 
-    // Check Chapa verification response
-    if (chapaData.status !== 'success' || chapaData.data.status !== 'success') {
+    if (chapaData.status !== 'success' || chapaData.data?.status !== 'success') {
       console.error('Verify Payment - Chapa payment verification failed:', chapaData);
-      return res.status(400).json({
-        error: 'Payment not successful',
-        details: chapaData,
-      });
+      return res.status(400).json({ error: 'Payment not successful', details: chapaData });
     }
 
-    // Find existing payment
+    // Find existing payment record
     const existingPayment = await Payment.findOne({ tx_ref: tx_ref.trim() });
     if (!existingPayment) {
       console.error('Verify Payment - No payment found in DB for tx_ref:', tx_ref);
@@ -235,7 +323,7 @@ export const verifyPayment = async (req, res) => {
       return res.status(404).json({ error: 'Payment record not found in database' });
     }
 
-    // Update payment status
+    // Update payment record with verified state
     const updatedPayment = await Payment.findOneAndUpdate(
       { tx_ref: tx_ref.trim() },
       {
@@ -247,22 +335,21 @@ export const verifyPayment = async (req, res) => {
       { new: true }
     );
 
-    // Fetch course to get instructorId
+    // Ensure course & instructor exist
     const course = await Course.findById(course_id);
     if (!course) {
       console.error('Verify Payment - Course not found for courseId:', course_id);
       return res.status(404).json({ error: 'Course not found' });
     }
-
     const instructorId = course.instructor;
     if (!instructorId) {
       console.error('Verify Payment - Instructor not found for course:', course_id);
       return res.status(404).json({ error: 'Instructor not found for the course' });
     }
 
-    // Create transaction if it doesn't exist
-    const instructorShare = existingPayment.amount * 0.8;
-    const platformShare = existingPayment.amount * 0.2;
+    // Create transaction if missing
+    const instructorShare = Number(existingPayment.amount) * 0.8;
+    const platformShare = Number(existingPayment.amount) * 0.2;
     const existingTx = await Transaction.findOne({ paymentId: updatedPayment._id });
 
     if (!existingTx) {
@@ -276,13 +363,9 @@ export const verifyPayment = async (req, res) => {
         platformShare,
         status: 'completed',
       });
-      console.log('Verify Payment - Transaction created for tx_ref:', tx_ref);
 
       // Update instructor balance
-      await User.findByIdAndUpdate(
-        instructorId,
-        { $inc: { availableBalance: instructorShare } }
-      );
+      await User.findByIdAndUpdate(instructorId, { $inc: { availableBalance: instructorShare } });
       console.log('Verify Payment - Instructor balance updated for instructorId:', instructorId);
     } else {
       console.log('Verify Payment - Transaction already exists for paymentId:', updatedPayment._id);
@@ -314,11 +397,6 @@ export const verifyPayment = async (req, res) => {
     });
   } catch (error) {
     console.error('Verify Payment - Error:', error.message, error.stack);
-    if (error.response) {
-      console.error('Verify Payment - Chapa API Error:', error.response.data);
-    } else if (error.request) {
-      console.error('Verify Payment - No response from Chapa API:', error.request);
-    }
     return res.status(500).json({
       error: 'Payment verification failed',
       details: error.response?.data || error.message,
@@ -326,12 +404,17 @@ export const verifyPayment = async (req, res) => {
   }
 };
 
+/* ============================
+   GENERATE RECEIPT (FULL)
+   Exports a PDF to the response.
+   Uses drawConsolidatedTable helper above.
+   ============================ */
 export const generateReceipt = async (req, res) => {
   try {
     const { tx_ref } = req.params;
-    
+
     if (!tx_ref) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
         error: 'Transaction reference is required',
       });
@@ -348,7 +431,7 @@ export const generateReceipt = async (req, res) => {
       });
     }
 
-    // Generate QR code
+    // Generate QR code (verification link)
     let qrCodeImage;
     try {
       const verificationUrl = `${process.env.FRONTEND_URL}/verify-payment/${tx_ref}`;
@@ -357,12 +440,12 @@ export const generateReceipt = async (req, res) => {
       console.warn('QR code generation failed:', qrError);
     }
 
-    const doc = new PDFDocument({ 
+    const doc = new PDFDocument({
       size: 'A4',
       margin: 40,
       info: {
         Title: `Payment Receipt - ${tx_ref}`,
-        Author: 'Your Institution Name',
+        Author: 'Abugida',
       },
     });
 
@@ -380,38 +463,37 @@ export const generateReceipt = async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename=Payment-Receipt-${tx_ref}.pdf`);
     doc.pipe(res);
 
-    // Header with logo
+    // Header: try logo from client assets, then backend assets, else text
+    let headerY = 40;
     try {
-      const logoPath = path.join(__dirname, '../../../client/src/assets/logo.png');
-      doc.image(logoPath, 50, 40, { width: 80 });
-      doc.fontSize(20)
-         .fillColor('#2C3E50')
-         .text('PAYMENT RECEIPT', 150, 60);
-    } catch (logoError) {
-      doc.fontSize(20)
-         .fillColor('#2C3E50')
-         .text('YOUR INSTITUTION', 50, 50);
+      const clientLogoPath = path.join(__dirname, '../../../client/src/assets/logo.png');
+      doc.image(clientLogoPath, 50, headerY, { width: 80 });
+      doc.fontSize(20).fillColor('#2C3E50').text('PAYMENT RECEIPT', 150, headerY + 20);
+    } catch (e1) {
+      try {
+        const backendLogoPath = path.join(__dirname, '../../utils/assets/logo.png');
+        doc.image(backendLogoPath, 50, headerY, { width: 80 });
+        doc.fontSize(20).fillColor('#2C3E50').text('PAYMENT RECEIPT', 150, headerY + 20);
+      } catch (e2) {
+        doc.fontSize(24).fillColor('#2C3E50').text('Abugida', 50, headerY);
+        doc.fontSize(20).fillColor('#2C3E50').text('PAYMENT RECEIPT', 50, headerY + 30);
+      }
     }
 
-    doc.fontSize(10)
-       .fillColor('#7f8c8d')
-       .text('OFFICIAL PAYMENT RECEIPT', 50, 90);
+    doc.fontSize(10).fillColor('#7f8c8d').text('OFFICIAL PAYMENT RECEIPT', 50, 90);
 
-    doc.moveTo(50, 105)
-       .lineTo(550, 105)
-       .stroke('#3498db')
-       .lineWidth(1);
+    doc.moveTo(50, 105).lineTo(550, 105).stroke('#e0e0e0').lineWidth(1);
 
-    // Consolidated table with all information
+    // Table sections
     const tableSections = [
       {
         title: 'Payment Information',
         rows: [
           { label: 'Receipt Number', value: tx_ref },
           { label: 'Date', value: new Date(payment.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
-          { label: 'Amount Paid', value: `${payment.amount.toLocaleString()} ETB`, highlight: true },
+          { label: 'Amount Paid', value: `${Number(payment.amount).toLocaleString()} ETB`, highlight: true },
           { label: 'Payment Method', value: payment.chapaData?.data?.method || 'Online Payment' },
-          { label: 'Status', value: payment.status.toUpperCase() },
+          { label: 'Status', value: (payment.status || 'PENDING').toUpperCase() },
         ],
       },
       {
@@ -426,38 +508,36 @@ export const generateReceipt = async (req, res) => {
         title: 'Course Information',
         rows: [
           { label: 'Course Title', value: payment.courseId?.title || 'N/A' },
-          { label: 'Instructor', value: payment.courseId?.instructor || 'N/A' },
+          { label: 'Instructor', value: String(payment.courseId?.instructor || 'N/A') },
           { label: 'Duration', value: payment.courseId?.duration || 'N/A' },
-          { label: 'Course Price', value: `${payment.courseId?.price?.toLocaleString() || '0'} ETB` },
+          { label: 'Course Price', value: `${payment.courseId?.price ? Number(payment.courseId.price).toLocaleString() : '0'} ETB` },
         ],
       },
     ];
 
     let currentY = drawConsolidatedTable(doc, tableSections, 50, 130);
 
-    // QR Code (if there's space)
+    // QR Code (if available)
     if (qrCodeImage && currentY < 650) {
-      doc.image(qrCodeImage, 400, currentY, { width: 100 });
-      doc.fontSize(10)
-         .fillColor('#7f8c8d')
-         .text('Scan to verify payment', 400, currentY + 110, {
-           width: 100,
-           align: 'center',
-         });
-      currentY += 130;
+      try {
+        // QR image is a data URL; pdfkit accepts buffer - convert base64
+        const base64Data = qrCodeImage.split(',')[1];
+        const imgBuffer = Buffer.from(base64Data, 'base64');
+        doc.image(imgBuffer, 400, currentY, { width: 100 });
+        doc.fontSize(10).fillColor('#7f8c8d')
+          .text('Scan to verify payment', 400, currentY + 110, { width: 100, align: 'center' });
+        currentY += 130;
+      } catch (err) {
+        console.warn('Failed to attach QR image to PDF:', err);
+      }
     }
 
     // Footer
-    doc.moveTo(50, currentY)
-       .lineTo(550, currentY)
-       .stroke('#3498db')
-       .lineWidth(1);
-
-    doc.fontSize(10)
-       .fillColor('#7f8c8d')
-       .text('Thank you for your payment!', 50, currentY + 20)
-       .text('For any inquiries, please contact support@fidelhub.com', 50, currentY + 35)
-       .text(`Generated on ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, 50, currentY + 50);
+    doc.moveTo(50, currentY).lineTo(550, currentY).stroke('#e0e0e0').lineWidth(1);
+    doc.fontSize(10).fillColor('#7f8c8d')
+      .text('Thank you for your payment!', 50, currentY + 20)
+      .text('For inquiries, contact support@abugida.com', 50, currentY + 35)
+      .text(`Generated on ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, 50, currentY + 50);
 
     doc.end();
   } catch (error) {

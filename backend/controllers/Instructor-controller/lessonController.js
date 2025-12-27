@@ -1,9 +1,129 @@
+import asyncHandler from 'express-async-handler';
 import Lesson from '../../models/Lesson.js';
+import Enrollment from '../../models/Enrollment.js';
 import Module from '../../models/Module.js';
 import QuizQuestion from '../../models/QuizQuestion.js';
-import asyncHandler from 'express-async-handler';
 import { processVideo } from '../../services/videoProcessing.js';
 import { deleteFromCloudinary } from '../../services/cloudStorage.js';
+
+// @desc    Get lesson by ID (student access)
+// @route   GET /api/lessons/:id
+// @access  Private/Student
+export const getLessonById = asyncHandler(async (req, res) => {
+  const lessonId = req.params.id;
+  const userId = req.user?._id;
+
+  try {
+    // Check if lesson exists
+    const lesson = await Lesson.findById(lessonId);
+    if (!lesson) {
+      return res.status(404).json({ success: false, message: 'Lesson not found' });
+    }
+
+    // Determine access based on enrollment, free flag, or instructor ownership
+    const lessonPop = await Lesson.findById(lessonId)
+      .populate({ path: 'module', populate: { path: 'course', select: 'instructor title' } })
+      .lean();
+
+    if (!lessonPop) return res.status(404).json({ success: false, message: 'Lesson not found' });
+
+    // Build Cloudinary playback candidates
+    if (lessonPop.video && lessonPop.video.url) {
+      const url = lessonPop.video.url;
+      lessonPop.video = Object.assign({}, lessonPop.video || {}, {
+        playbackCandidates: { hls: null, mp4: url, playbackUrl: url }
+      });
+    }
+
+    const course = lessonPop.module?.course;
+
+    // Free lesson: allow and still return module + progress if available
+    if (lessonPop.free) {
+      // gather module lessons
+      const moduleLessons = await Lesson.find({ module: lessonPop.module._id }).sort({ position: 1 }).lean();
+      // try to get progress (if authenticated)
+      let progressData = null;
+      if (userId) {
+        const Progress = await import('../../models/Progress.js');
+        const progress = await Progress.default.findOne({ studentId: userId, courseId: course?._id }).lean();
+        if (progress) {
+          // If progress.totalLessons is missing or zero, compute a fallback from module lessons
+          if (!progress.totalLessons || progress.totalLessons === 0) {
+            const totalLessonsFallback = moduleLessons ? moduleLessons.length : 0;
+            const completedCount = Array.isArray(progress.completedLessons) ? progress.completedLessons.length : 0;
+            const percentage = totalLessonsFallback > 0 ? parseFloat(((completedCount / totalLessonsFallback) * 100).toFixed(2)) : 0;
+            progress.totalLessons = totalLessonsFallback;
+            progress.progressPercentage = percentage;
+          }
+          progressData = progress;
+        }
+      }
+      console.debug('getLessonById: moduleLessons=', moduleLessons ? moduleLessons.length : 0, 'progress=', progressData ? { totalLessons: progressData.totalLessons, completed: (progressData.completedLessons || []).length, progressPercentage: progressData.progressPercentage } : null);
+      return res.json({ lesson: lessonPop, module: { ...lessonPop.module, lessons: moduleLessons }, progress: progressData });
+    }
+
+    // Instructor of the course: allow
+    if (req.user && course && course.instructor && req.user._id && req.user._id.toString() === course.instructor.toString()) {
+      const moduleLessons = await Lesson.find({ module: lessonPop.module._id }).sort({ position: 1 }).lean();
+      console.debug('getLessonById (instructor): moduleLessons=', moduleLessons ? moduleLessons.length : 0);
+      return res.json({ lesson: lessonPop, module: { ...lessonPop.module, lessons: moduleLessons }, progress: null });
+    }
+
+    // Check enrollment for student
+    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
+
+    const enrollment = await Enrollment.findOne({ studentId: userId, courseId: course?._id });
+    if (!enrollment) {
+      return res.status(403).json({ success: false, message: 'You do not have access to this lesson' });
+    }
+
+    // Fetch module lessons and progress for enrolled student
+    const moduleLessons = await Lesson.find({ module: lessonPop.module._id }).sort({ position: 1 }).lean();
+    const Progress = await import('../../models/Progress.js');
+    // Try to find an existing progress doc (not lean so we can create if missing)
+    let progressDoc = await Progress.default.findOne({ studentId: userId, courseId: course?._id });
+
+    // If not found, create an empty progress record (so UI can show 0/N)
+    if (!progressDoc) {
+      const totalLessonsFallback = moduleLessons ? moduleLessons.length : 0;
+      try {
+        progressDoc = await Progress.default.create({
+          studentId: userId,
+          courseId: course?._id,
+          completedLessons: [],
+          totalLessons: totalLessonsFallback,
+          progressPercentage: 0
+        });
+      } catch (createErr) {
+        console.error('Failed to create fallback progress:', createErr?.message || createErr);
+      }
+    }
+
+    // Normalize to plain object for response and compute fallback totals if needed
+    let progressToReturn = null;
+    if (progressDoc) {
+      const progressObj = progressDoc.toObject ? progressDoc.toObject() : progressDoc;
+      if (!progressObj.totalLessons || progressObj.totalLessons === 0) {
+        const totalLessonsFallback = moduleLessons ? moduleLessons.length : 0;
+        const completedCount = Array.isArray(progressObj.completedLessons) ? progressObj.completedLessons.length : 0;
+        const percentage = totalLessonsFallback > 0 ? parseFloat(((completedCount / totalLessonsFallback) * 100).toFixed(2)) : 0;
+        progressObj.totalLessons = totalLessonsFallback;
+        progressObj.progressPercentage = percentage;
+      }
+      progressToReturn = progressObj;
+    }
+
+    console.debug('getLessonById (student): moduleLessons=', moduleLessons ? moduleLessons.length : 0, 'progress=', progressToReturn ? { totalLessons: progressToReturn.totalLessons, completed: (progressToReturn.completedLessons || []).length, progressPercentage: progressToReturn.progressPercentage } : null);
+
+    return res.json({ lesson: lessonPop, module: { ...lessonPop.module, lessons: moduleLessons }, progress: progressToReturn || null });
+  } catch (err) {
+    console.error('getLessonById error:', {
+      message: err?.message,
+      stack: err?.stack
+    });
+    return res.status(500).json({ success: false, message: 'Failed to retrieve lesson', error: err?.message });
+  }
+});
 
 // @desc    Create a new lesson
 // @route   POST /api/lessons
@@ -80,14 +200,18 @@ export const uploadLessonVideo = asyncHandler(async (req, res) => {
       resource_type: 'video'
     });
 
-    // Update lesson with video data
+    // Ensure duration is a valid number
+    let durationSeconds = Number(videoData.duration);
+    if (!durationSeconds || isNaN(durationSeconds) || durationSeconds < 1) {
+      durationSeconds = await getVideoDuration(req.file.path);
+    }
     lesson.video = {
       url: videoData.videoUrl,
       publicId: videoData.videoPublicId,
       thumbnailUrl: videoData.thumbnailUrl,
       thumbnailPublicId: videoData.thumbnailPublicId
     };
-    lesson.duration = formatDuration(videoData.duration);
+    lesson.duration = formatDuration(durationSeconds);
     lesson.type = 'video';
 
     const updatedLesson = await lesson.save();

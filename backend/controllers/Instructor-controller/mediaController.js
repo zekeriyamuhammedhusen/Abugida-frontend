@@ -6,8 +6,9 @@ import Lesson from '../../models/Lesson.js';
 import { protect, instructor } from '../../middleware/authMiddleware.js';
 import asyncHandler from 'express-async-handler';
 import { processVideo, generateVideoThumbnail, getVideoDuration } from '../../services/videoProcessing.js';
+import { exec } from 'child_process';
+const execAsync = promisify(exec);
 
-const unlinkAsync = promisify(fs.unlink);
 
 // @desc    Upload video file and process it
 // @route   POST /api/media/upload
@@ -34,9 +35,62 @@ export const uploadMedia = asyncHandler(async (req, res) => {
       status: 'complete'
     });
   } catch (error) {
-    console.error('Video processing error:', error);
-    res.status(500);
-    throw new Error('Failed to process video');
+    // Log detailed error for debugging
+    console.error('Video processing error:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+      code: error?.code,
+      response: error?.response && (typeof error.response === 'object' ? error.response.data || error.response : error.response),
+    });
+
+    // Attempt to remove temp file if exists
+    try {
+      if (req.file && req.file.path) {
+        await unlinkAsync(req.file.path);
+      }
+    } catch (cleanupErr) {
+      console.warn('Failed to cleanup temp file after upload error:', cleanupErr?.message || cleanupErr);
+    }
+
+    // Return descriptive error to client to help debugging (avoid leaking secrets)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to process video',
+      error: error?.message || String(error),
+      details: error?.response?.data || null
+    });
+  }
+});
+
+// @desc    Diagnostics for media subsystem (Cloudinary + ffmpeg)
+// @route   GET /api/media/diagnostics
+// @access  Private/Instructor (currently public for debugging)
+export const mediaDiagnostics = asyncHandler(async (req, res) => {
+  try {
+    const cloudinaryConfigured = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+
+    let ffmpegVersion = null;
+    try {
+      const { stdout } = await execAsync('ffmpeg -version');
+      ffmpegVersion = stdout.split('\n')[0];
+    } catch (e) {
+      ffmpegVersion = null;
+    }
+
+    return res.json({
+      success: true,
+      cloudinary: {
+        configured: cloudinaryConfigured
+      },
+      ffmpeg: {
+        installed: !!ffmpegVersion,
+        version: ffmpegVersion
+      },
+      nodeEnv: process.env.NODE_ENV || 'development'
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Diagnostics failed', error: String(err) });
   }
 });
 
@@ -231,7 +285,7 @@ export const assignVideoToLesson = asyncHandler(async (req, res) => {
       thumbnailUrl: movedThumbnail?.secure_url || thumbnailUrl,
       thumbnailPublicId: movedThumbnail?.public_id || null
     };
-    lesson.duration = formatDuration(duration);
+    if (duration) lesson.duration = formatDuration(duration);
     lesson.type = 'video';
 
     const updatedLesson = await lesson.save();
@@ -259,12 +313,7 @@ export const assignVideoToLesson = asyncHandler(async (req, res) => {
     console.error('Video assignment failed:', {
       error: error.message,
       stack: error.stack,
-      context: {
-        lessonId,
-        videoPublicId,
-        thumbnailPublicId,
-        timestamp: new Date().toISOString()
-      }
+      context: { lessonId, videoPublicId, thumbnailPublicId, timestamp: new Date().toISOString() }
     });
 
     return res.status(500).json({
@@ -276,6 +325,7 @@ export const assignVideoToLesson = asyncHandler(async (req, res) => {
     });
   }
 });
+// api.video status endpoints removed (Cloudinary-only pipeline)
 // @desc    Replace lesson video
 // @route   PUT /api/media/replace/:lessonId
 // @access  Private/Instructor
@@ -386,6 +436,39 @@ export const getVideoPreview = asyncHandler(async (req, res) => {
     console.error('Error fetching video preview:', error);
     res.status(404);
     throw new Error('Video not found');
+  }
+});
+
+// @desc    Check assigned video exists in Cloudinary for a lesson
+// @route   GET /api/media/check/:lessonId
+// @access  Private/Instructor
+export const checkAssignedVideo = asyncHandler(async (req, res) => {
+  const { lessonId } = req.params;
+
+  const lesson = await Lesson.findById(lessonId).select('video').populate({
+    path: 'module',
+    populate: { path: 'course', select: 'instructor' }
+  });
+
+  if (!lesson) {
+    return res.status(404).json({ success: false, message: 'Lesson not found' });
+  }
+
+  // verify instructor ownership
+  if (lesson.module?.course?.instructor && lesson.module.course.instructor.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+
+  if (!lesson.video || !lesson.video.publicId) {
+    return res.status(400).json({ success: false, message: 'No video assigned to this lesson' });
+  }
+
+  try {
+    const resource = await cloudinary.api.resource(lesson.video.publicId, { resource_type: 'video' });
+    return res.json({ success: true, resource });
+  } catch (err) {
+    // If not found or other error, return detailed message
+    return res.status(404).json({ success: false, message: 'Cloudinary resource not found', error: err.message });
   }
 });
 

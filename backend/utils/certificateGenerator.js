@@ -14,7 +14,7 @@ function jumpLine(doc, lines) {
   }
 }
 
-export const generateCertificate = async (studentId, courseId, studentName, courseTitle) => {
+export const generateCertificate = async (studentId, courseId, studentName, courseTitle, instructorName = 'Instructor') => {
   return new Promise((resolve, reject) => {
     try {
       const certificateFileName = `${studentId}-${courseId}-certificate.pdf`;
@@ -37,9 +37,17 @@ export const generateCertificate = async (studentId, courseId, studentName, cour
         .rect(margin, margin, doc.page.width - margin * 2, doc.page.height - margin * 2)
         .stroke();
 
-      // Add Logo
-      const logoPath = path.join(__dirname, './assets/logo.png');
-      doc.image(logoPath, doc.page.width / 2 - 70, 60, { fit: [140, 70], align: 'center' });
+      // Logo (Abugida) with fallback to text brand
+      try {
+        const logoPath = path.join(__dirname, './assets/logo.png');
+        doc.image(logoPath, doc.page.width / 2 - 70, 60, { fit: [140, 70], align: 'center' });
+      } catch (e) {
+        doc
+          .font(path.join(__dirname, './fonts/NotoSansJP-Bold.otf'))
+          .fontSize(28)
+          .fill('#021c27')
+          .text('Abugida', 0, 70, { align: 'center' });
+      }
 
       jumpLine(doc, 5);
 
@@ -100,9 +108,9 @@ export const generateCertificate = async (studentId, courseId, studentName, cour
         .font(path.join(__dirname, './fonts/NotoSansJP-Bold.otf'))
         .fontSize(10)
         .fill('#021c27')
-        .text('John Doe', startLine1, signatureHeight + 10, { align: 'center', width: lineSize })
+        .text(instructorName || 'Instructor', startLine1, signatureHeight + 10, { align: 'center', width: lineSize })
         .text(studentName, startLine2, signatureHeight + 10, { align: 'center', width: lineSize })
-        .text('Jane Doe', startLine3, signatureHeight + 10, { align: 'center', width: lineSize });
+        .text('Director', startLine3, signatureHeight + 10, { align: 'center', width: lineSize });
 
       doc
         .font(path.join(__dirname, './fonts/NotoSansJP-Light.otf'))
@@ -113,7 +121,8 @@ export const generateCertificate = async (studentId, courseId, studentName, cour
       jumpLine(doc, 4);
 
       // Link + QR Code
-      const link = `https://fidelhub.com/verify/${studentId}-${courseId}`;
+      const frontendBase = process.env.FRONTEND_URL || 'https://abugida.edu';
+      const link = `${frontendBase}/verify/${studentId}-${courseId}`;
       const linkWidth = doc.widthOfString(link);
       const linkHeight = doc.currentLineHeight();
 

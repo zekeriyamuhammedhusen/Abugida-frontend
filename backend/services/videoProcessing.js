@@ -1,4 +1,7 @@
 import ffmpeg from 'fluent-ffmpeg';
+// Use static ffmpeg/ffprobe binaries to avoid requiring system install
+import ffmpegStatic from 'ffmpeg-static';
+import ffprobeStatic from 'ffprobe-static';
 import { v2 as cloudinary } from 'cloudinary';
 import { promisify } from 'util';
 import { config } from 'dotenv';
@@ -9,6 +12,42 @@ import { uploadToCloudinary, uploadVideoToCloudinary } from './cloudStorage.js';
 config();
 
 const unlinkAsync = promisify(fs.unlink);
+
+// Configure fluent-ffmpeg to use static binaries when available
+try {
+  // Allow explicit overrides via environment variables (helpful on Windows)
+  const envFfprobe = process.env.FFPROBE_PATH || process.env.FFPROBE;
+  const envFfmpeg = process.env.FFMPEG_PATH || process.env.FFMPEG;
+
+  if (envFfprobe) {
+    ffmpeg.setFfprobePath(envFfprobe);
+    console.log('Configured ffprobe path from ENV:', envFfprobe);
+  }
+  if (envFfmpeg) {
+    ffmpeg.setFfmpegPath(envFfmpeg);
+    console.log('Configured ffmpeg path from ENV:', envFfmpeg);
+  }
+
+  // ffmpegStatic/ffprobeStatic may export either a string (path) or an object with a `path` property
+  const ffprobePath = ffprobeStatic && (typeof ffprobeStatic === 'string' ? ffprobeStatic : ffprobeStatic.path);
+  const ffmpegPath = ffmpegStatic && (typeof ffmpegStatic === 'string' ? ffmpegStatic : ffmpegStatic.path);
+  // Only set static paths if env vars didn't already set them
+  try {
+    if (!envFfprobe && ffprobePath) {
+      ffmpeg.setFfprobePath(ffprobePath);
+      console.log('Configured ffprobe path from static package:', ffprobePath);
+    }
+    if (!envFfmpeg && ffmpegPath) {
+      ffmpeg.setFfmpegPath(ffmpegPath);
+      console.log('Configured ffmpeg path from static package:', ffmpegPath);
+    }
+  } catch (e) {
+    console.warn('Failed to configure static ffmpeg/ffprobe paths:', e?.message || e);
+  }
+} catch (e) {
+  // If static binaries aren't available, fluent-ffmpeg will try system binaries
+  console.warn('ffmpeg/ffprobe static binaries not configured:', e?.message || e);
+}
 
 // Utility to extract public ID from a Cloudinary URL
 const extractPublicIdFromUrl = (url) => {

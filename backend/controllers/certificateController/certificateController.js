@@ -21,13 +21,14 @@ export const generateCertificateForStudent = async (req, res) => {
     }
 
     const student = await Student.findById(studentId);
-    const course = await Course.findById(courseId);
+    const course = await Course.findById(courseId).populate('instructor', 'name');
 
     if (!student || !course) {
       return res.status(404).json({ message: 'Student or Course not found' });
     }
 
-    const certificateUrl = await generateCertificate(studentId, courseId, student.name, course.title);
+    const instructorName = course?.instructor?.name || 'Instructor';
+    const certificateUrl = await generateCertificate(studentId, courseId, student.name, course.title, instructorName);
 
     const newCertificate = new Certificate({
       studentId,

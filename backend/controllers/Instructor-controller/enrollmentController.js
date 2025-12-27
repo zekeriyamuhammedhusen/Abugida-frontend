@@ -14,6 +14,12 @@ export const enrollStudent = async (req, res) => {
 
     // Create new enrollment if not already enrolled
     const enrollment = await Enrollment.create(req.body);
+    // Grant lesson access for this student across the course
+    try {
+      await grantAccessForStudentCourse(req.body.studentId, req.body.courseId);
+    } catch (err) {
+      console.error('Failed to grant lesson access after manual enrollment:', err.message);
+    }
     res.status(201).json(enrollment);
     
   } catch (err) {
@@ -44,13 +50,17 @@ export const getEnrolledCourses = async (req, res) => {
   try {
     const { studentId } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({ message: 'Invalid studentId' });
+    }
+
     const enrollments = await Enrollment.find({ studentId })
       .populate({
         path: 'courseId',
-        select: 'title thumbnail category level createdAt updatedAt',
+        select: 'title thumbnail category level createdAt updatedAt instructor',
         populate: {
           path: 'instructor',
-          select: 'name profilePicture',
+          select: 'name email profilePicture',
         },
       })
       .populate({
@@ -59,13 +69,17 @@ export const getEnrolledCourses = async (req, res) => {
       })
       .exec();
 
-    const successfulEnrollments = enrollments.filter(enrollment => enrollment.paymentId?.status === 'success');
+    // Treat enrollments with successful payment OR no payment record (e.g., free/manual enrollments) as valid
+    const validEnrollments = enrollments.filter((enrollment) => {
+      const status = enrollment.paymentId?.status;
+      return (!enrollment.paymentId || status === 'success') && enrollment.courseId;
+    });
 
-    if (successfulEnrollments.length === 0) {
-      return res.status(404).json({ message: 'No successful enrollments found for this student.' });
+    if (validEnrollments.length === 0) {
+      return res.status(200).json([]);
     }
 
-    const courses = successfulEnrollments.map(enrollment => enrollment.courseId);
+    const courses = validEnrollments.map(enrollment => enrollment.courseId);
 
     const uniqueCourses = Array.from(new Set(courses.map(course => course._id.toString())))
       .map(id => courses.find(course => course._id.toString() === id));
