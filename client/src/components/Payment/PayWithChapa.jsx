@@ -1,9 +1,15 @@
 // components/PayWithChapa.jsx
 import axios from 'axios';
 import api from '@/lib/api';
+import { toast } from "sonner";
 
 const PayWithChapa = ({ course, user }) => {
   const handlePayment = async () => {
+    // If user is not logged in, show a friendly message and stop
+    if (!user || !user._id) {
+      toast.error("Please create account to enroll in course");
+      return;
+    }
     // Open a blank window synchronously to avoid popup blockers, then set its location after init
     const popup = window.open('about:blank', '_blank', 'noopener,noreferrer');
     try {
@@ -53,15 +59,11 @@ const PayWithChapa = ({ course, user }) => {
       }, 1500);
     } catch (err) {
       console.error('Payment initiation failed', err);
-      // Show sensible error to user
-      const msg = err?.response?.data?.error || err?.message || 'Failed to initiate payment';
-      try {
-        // use global toast if available
-        const { toast } = await import('sonner');
-        toast.error(msg);
-      } catch (e) {
-        alert(msg);
-      }
+      // Map unauthorized/missing user to a clearer message
+      const status = err?.response?.status;
+      const isAuthError = status === 401 || status === 403;
+      const msg = 'Please create account to enroll in course';
+      toast.error(msg);
       // Close the popup if it was opened but initiation failed
       try {
         if (popup && !popup.closed) popup.close();

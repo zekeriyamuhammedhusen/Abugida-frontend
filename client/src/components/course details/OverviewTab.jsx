@@ -4,6 +4,7 @@ import axios from "axios";
 import api from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "sonner";
 
 export const OverviewTab = ({ course, total }) => {
   const [isEnrolled, setIsEnrolled] = useState(false);
@@ -36,7 +37,8 @@ export const OverviewTab = ({ course, total }) => {
     setLoading(true);
     try {
       if (!user?.email || !user?.name) {
-        alert("Please log in to enroll.");
+        toast.error("Please create account to enroll in course");
+        setLoading(false);
         return;
       }
       const res = await api.post(`/api/payment/initiate`, {
@@ -48,11 +50,16 @@ export const OverviewTab = ({ course, total }) => {
       if (res.data?.checkoutUrl) {
         window.location.replace(res.data.checkoutUrl);
       } else {
-        alert("Payment initiation failed.");
+        toast.error("Please create account to enroll in course");
       }
     } catch (error) {
       console.error("Enrollment error:", error?.response?.data || error.message);
-     alert("Enrollment failed: " + (error?.response?.data?.error || "Unknown error"));
+      const status = error?.response?.status;
+      const isAuthError = status === 401 || status === 403;
+      const msg = isAuthError
+        ? "Please create account to enroll in course"
+        : (error?.response?.data?.error || "Please create account to enroll in course");
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

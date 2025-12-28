@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import api from '@/lib/api';
+import { toast } from "sonner";
 
 export const PaymentButton = ({ courseId, amount, email, firstName, lastName }) => {
   const [loading, setLoading] = useState(false);
@@ -11,6 +12,13 @@ export const PaymentButton = ({ courseId, amount, email, firstName, lastName }) 
     setError(null);
 
     try {
+      // If essential user info is missing, prompt to create account
+      if (!email || !firstName || !lastName) {
+        toast.error("Please create account to enroll in course");
+        setLoading(false);
+        return;
+      }
+
       const response = await api.post(`/api/payment/initiate`, {
         amount,
         email,
@@ -47,10 +55,14 @@ export const PaymentButton = ({ courseId, amount, email, firstName, lastName }) 
           }
         }, 1500);
       } else {
-        setError('Payment initialization failed');
+        const msg = 'Please create account to enroll in course';
+        toast.error(msg);
+        setError(msg);
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Payment error');
+      const msg = 'Please create account to enroll in course';
+      toast.error(msg);
+      setError(msg);
     } finally {
       setLoading(false);
     }
