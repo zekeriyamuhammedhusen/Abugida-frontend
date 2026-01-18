@@ -16,15 +16,19 @@ import axios from "axios";
 import api from "@/lib/api";
 import InstructorAnalyticsDashboard from "../components/instructor/analytics/InstructorAnalyticsDashboard";
 import { MessagesTab } from "@/components/student-dashboard/MessagesTab";
+import { useLanguage } from "@/context/LanguageContext";
 
 const InstructorDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [mainTab, setMainTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState([]);
   const [editCourseId, setEditCourseId] = useState(null);
   const [stats, setStats] = useState([]);
+  const [messageCount, setMessageCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
   const [loading, setLoading] = useState({
     courses: false,
     stats: false,
@@ -47,6 +51,45 @@ const InstructorDashboard = () => {
       controller.abort();
       isFetchingRef.current = false;
     };
+  }, [user]);
+
+  // Fetch unread messages and reuse count for notifications badge
+  useEffect(() => {
+    const fetchUnread = async () => {
+      if (!user?._id) return;
+      try {
+        const res = await api.get(`/api/chat/conversations/?userId=${user._id}`);
+        const conversations = Array.isArray(res.data) ? res.data : [];
+        const totalUnread = conversations.reduce((sum, convo) => {
+          const unread = convo.unreadCount ?? (convo.unread ? 1 : 0);
+          return sum + (Number(unread) || 0);
+        }, 0);
+        setMessageCount(totalUnread);
+      } catch (err) {
+        console.error("Failed to load unread messages", err);
+      }
+    };
+
+    fetchUnread();
+  }, [user]);
+
+  // Fetch enrollment count for notifications (student enrollments on instructor's courses)
+  useEffect(() => {
+    const fetchEnrollNotifications = async () => {
+      if (!user?._id) return;
+      try {
+        const res = await api.get(`/api/instructor/graphs/enrollments-per-course`);
+        const totalEnrollments = Array.isArray(res.data)
+          ? res.data.reduce((sum, course) => sum + (Number(course.enrollments) || 0), 0)
+          : 0;
+        setNotificationCount(totalEnrollments);
+      } catch (err) {
+        console.error("Failed to load enrollment notifications", err);
+        setNotificationCount(0);
+      }
+    };
+
+    fetchEnrollNotifications();
   }, [user]);
 
   const fetchInstructorCourses = async (signal) => {
@@ -78,6 +121,7 @@ const InstructorDashboard = () => {
               ...course,
               progress: statsResponse.data.averageProgress || 0,
               students: statsResponse.data.studentCount || 0,
+              studentIds: statsResponse.data.studentIds || [],
             };
           } catch (error) {
             console.error(
@@ -88,6 +132,7 @@ const InstructorDashboard = () => {
               ...course,
               progress: 0,
               students: 0,
+              studentIds: [],
             };
           }
         })
@@ -114,7 +159,14 @@ const InstructorDashboard = () => {
 
   const updateSummaryStats = (courses) => {
     try {
-      const totalStudents = courses.reduce(
+      const uniqueStudentIds = new Set();
+      courses.forEach((course) => {
+        (course.studentIds || []).forEach((id) => {
+          if (id) uniqueStudentIds.add(id.toString());
+        });
+      });
+
+      const totalStudents = uniqueStudentIds.size || courses.reduce(
         (sum, course) => sum + (course.students || 0),
         0
       );
@@ -158,7 +210,7 @@ const InstructorDashboard = () => {
   const handleCreateCourse = () => {
     setActiveTab("courses");
     setMainTab("create");
-    toast.success("Starting new course creation");
+    toast.success(t("instructor.toasts.startCreate"));
     if (window.innerWidth < 768) {
       setIsSidebarOpen(false);
     }
@@ -175,7 +227,7 @@ const InstructorDashboard = () => {
     fetchInstructorCourses();
     setMainTab("list");
     setEditCourseId(null);
-    toast.success("Course created successfully");
+    toast.success(t("instructor.toasts.created"));
   };
 
   const handleEditCourse = (courseId) => {
@@ -188,15 +240,15 @@ const InstructorDashboard = () => {
   };
 
   const handleDeleteCourse = async (courseId) => {
-    const ok = window.confirm("Are you sure you want to delete this course? This action cannot be undone.");
+    const ok = window.confirm(t("instructor.confirm.deleteCourse"));
     if (!ok) return;
     try {
       await api.delete(`/api/courses/${courseId}`);
-      toast.success("Course deleted");
+      toast.success(t("instructor.toasts.deleted"));
       fetchInstructorCourses();
     } catch (error) {
       console.error("Failed to delete course", error);
-      toast.error(error.response?.data?.message || "Failed to delete course");
+      toast.error(error.response?.data?.message || t("instructor.toasts.deleteError"));
     }
   };
 
@@ -211,17 +263,24 @@ const InstructorDashboard = () => {
         user={user}
       />
       <div className="flex-1 flex flex-col overflow-auto md:ml-64">
-        <Header activeTab={activeTab} />
+        <Header
+          activeTab={activeTab}
+          onNotificationsClick={() => setActiveTab("dashboard")}
+          onMessagesClick={() => setActiveTab("messages")}
+          onSettingsClick={() => setActiveTab("settings")}
+          notificationCount={notificationCount}
+          messageCount={messageCount}
+        />
         <div className="p-5">
           {loading.overall ? (
             <div className="flex flex-col items-center justify-center p-8">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
               <p className="text-gray-600 dark:text-gray-400">
                 {loading.courses && !loading.stats
-                  ? "Loading courses..."
+                  ? t("instructor.loading.courses")
                   : loading.stats
-                  ? "Calculating course statistics..."
-                  : "Loading dashboard..."}
+                  ? t("instructor.loading.stats")
+                  : t("instructor.loading.dashboard")}
               </p>
               <button
                 onClick={() =>
@@ -229,7 +288,7 @@ const InstructorDashboard = () => {
                 }
                 className="mt-4 text-sm text-blue-500 hover:text-blue-700"
               >
-                Retry
+                {t("instructor.loading.retry")}
               </button>
             </div>
           ) : (
@@ -241,8 +300,8 @@ const InstructorDashboard = () => {
                   onValueChange={setMainTab}
                 >
                   <TabsList className="mb-6">
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                    <TabsTrigger value="overview">{t("instructor.tabs.overview")}</TabsTrigger>
+                    <TabsTrigger value="analytics">{t("instructor.tabs.analytics")}</TabsTrigger>
                   </TabsList>
                   <TabsContent value="overview">
                     <motion.div
@@ -273,8 +332,8 @@ const InstructorDashboard = () => {
                   onValueChange={setMainTab}
                 >
                   <TabsList className="mb-6">
-                    <TabsTrigger value="list">My Courses</TabsTrigger>
-                    <TabsTrigger value="create">Create Course</TabsTrigger>
+                    <TabsTrigger value="list">{t("instructor.tabs.myCourses")}</TabsTrigger>
+                    <TabsTrigger value="create">{t("instructor.tabs.createCourse")}</TabsTrigger>
                   </TabsList>
                   <TabsContent value="list">
                     <CourseTable
@@ -346,17 +405,17 @@ const InstructorDashboard = () => {
               )} */}
               {activeTab === "certificates" && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
-                  <h3 className="font-semibold mb-4">Certificates</h3>
+                  <h3 className="font-semibold mb-4">{t("instructor.certificates.title")}</h3>
                   <p className="text-muted-foreground">
-                    Certificate management will be displayed here.
+                    {t("instructor.certificates.subtitle")}
                   </p>
                 </div>
               )}
               {activeTab === "calendar" && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
-                  <h3 className="font-semibold mb-4">Calendar</h3>
+                  <h3 className="font-semibold mb-4">{t("instructor.calendar.title")}</h3>
                   <p className="text-muted-foreground">
-                    Calendar view will be displayed here.
+                    {t("instructor.calendar.subtitle")}
                   </p>
                 </div>
               )}

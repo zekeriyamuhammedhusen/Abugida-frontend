@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import AnimatedButton from "../../components/ui/AnimatedButton ";
+import { useLanguage } from "@/context/LanguageContext";
 
 const CallToAction = () => {
+  const { t } = useLanguage();
   return (
     <section className="py-20 bg-fidel-500 relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white dark:from-slate-900 to-transparent opacity-20"></div>
@@ -16,7 +18,7 @@ const CallToAction = () => {
           viewport={{ once: true }}
           className="text-3xl md:text-4xl font-bold mb-6"
         >
-          Ready to Transform Your Learning Experience?
+          {t('home.cta.title')}
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -25,8 +27,7 @@ const CallToAction = () => {
           viewport={{ once: true }}
           className="text-white/80 mb-10 text-lg"
         >
-          Join thousands of students who are already benefiting from our
-          innovative platform. Start your learning journey today!
+          {t('home.cta.description')}
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -41,7 +42,7 @@ const CallToAction = () => {
             variant="outline"
             className="bg-white text-fidel-600 hover:bg-slate-100"
           >
-            Get Started Now
+            {t('home.cta.button1')}
           </AnimatedButton>
           <AnimatedButton
             to="/courses"
@@ -49,7 +50,7 @@ const CallToAction = () => {
             variant="outline"
             className="border-white/30 text-white hover:bg-fidel-600/50 hover:text-black "
           >
-            Explore Courses
+            {t('home.cta.button2')}
           </AnimatedButton>
         </motion.div>
       </div>

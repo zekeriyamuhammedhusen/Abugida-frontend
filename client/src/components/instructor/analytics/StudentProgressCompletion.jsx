@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Award } from "lucide-react";
-import axios from "axios";
 import api from "@/lib/api";
 
 const COLORS = ["#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE", "#DBEAFE"];
@@ -17,13 +16,31 @@ const StudentProgressCompletion = ({ timeRange }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const formatLabel = (name) => {
+    if (!name) return "Unknown";
+    const cleaned = name.toString().trim().replace(/[_-]/g, " ");
+    const lower = cleaned.toLowerCase();
+
+    if (lower.includes("in progress")) return "In Progress";
+    if (lower.includes("completed")) return "Completed";
+    if (lower.includes("not")) return "Not Started";
+
+    return cleaned.replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
   useEffect(() => {
     const fetchProgressData = async () => {
       try {
         const response = await api.get(`/api/graphs/student-progress-completion`, {
           params: { timeRange },
         });
-        setData(response.data);
+        const normalized = (response.data || []).map((item) => ({
+          ...item,
+          label: formatLabel(item.name),
+          value: Number(item.value) || 0,
+          count: Number(item.count) || 0,
+        }));
+        setData(normalized);
       } catch (error) {
         console.error("Error fetching student progress data:", error);
       } finally {
@@ -57,13 +74,13 @@ const StudentProgressCompletion = ({ timeRange }) => {
                 <Pie
                   data={data}
                   dataKey="value"
-                  nameKey="name"
+                  nameKey="label"
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
                   outerRadius={80}
                   paddingAngle={5}
-                  label={(entry) => `${entry.name}: ${entry.value}%`}
+                  label={false}
                 >
                   {data.map((entry, index) => (
                     <Cell
@@ -78,7 +95,7 @@ const StudentProgressCompletion = ({ timeRange }) => {
                       return (
                         <div className="bg-white dark:bg-slate-800 p-2 rounded shadow-lg border border-slate-200 dark:border-slate-700">
                           <p className="text-sm font-medium">
-                            {`${payload[0].name}: ${payload[0].value}%`}
+                            {`${payload[0].payload.label}: ${payload[0].value}%`}
                           </p>
                           <p className="text-sm">
                             {`Number of students: ${payload[0].payload.count}`}
@@ -91,6 +108,22 @@ const StudentProgressCompletion = ({ timeRange }) => {
                 />
               </PieChart>
             </ResponsiveContainer>
+          )}
+          {!loading && data.length > 0 && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+              {data.map((entry, index) => (
+                <div key={entry.label} className="flex items-center space-x-2">
+                  <span
+                    className="inline-block h-3 w-3 rounded-sm"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    aria-hidden
+                  />
+                  <span className="font-medium">{entry.label}</span>
+                  <span className="text-muted-foreground">{entry.value}%</span>
+                  <span className="text-muted-foreground">· {entry.count} students</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </CardContent>

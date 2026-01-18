@@ -3,7 +3,6 @@ import Hero from "@/components/home/Hero";
 import PopularCourses from "@/components/home/PopularCourses";
 import CallToAction from "@/components/home/CallToAction";
 import Testimonials from "@/components/home/Testimonials";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const Index = () => {
   useEffect(() => {
@@ -19,9 +18,6 @@ const Index = () => {
         <Testimonials />
       </main>
 
-      <div className="fixed bottom-6 right-6 z-50">
-        <ThemeToggle />
-      </div>
     </div>
   );
 };

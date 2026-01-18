@@ -47,7 +47,7 @@ const bankGroups = [
   { banks: allBanks.filter(bank => bank.group === "ERAT BANK") }
 ];
 
-const Withdrawal = ({ user }) => {
+const Withdrawal = ({ user, dateFilter = "all" }) => {
   const [bankDetails, setBankDetails] = useState({
     accountName: user?.bankDetails?.accountName || "",
     accountNumber: user?.bankDetails?.accountNumber || "",
@@ -72,7 +72,10 @@ const Withdrawal = ({ user }) => {
   const fetchBalance = async () => {
     try {
       setBalanceLoading(true);
-      const response = await api.get(`/api/withdrawals/balance`);
+      const params = new URLSearchParams();
+      if (dateFilter && dateFilter !== 'all') params.set('range', dateFilter);
+      const qs = params.toString();
+      const response = await api.get(`/api/withdrawals/balance${qs ? `?${qs}` : ''}`);
       setBalance(response.data.balance);
     } catch (error) {
       toast.error("Failed to fetch balance");
@@ -84,7 +87,7 @@ const Withdrawal = ({ user }) => {
 
   useEffect(() => {
     fetchBalance();
-  }, []);
+  }, [dateFilter]);
 
   const handleBankDetailsChange = (e) => {
     const { name, value } = e.target;
@@ -335,7 +338,7 @@ const Withdrawal = ({ user }) => {
             <Button 
               onClick={handleWithdraw}
               disabled={isLoading || balanceLoading}
-              className="w-full h-12 rounded-lg bg-fidel-600 hover:bg-fidel-700 text-white text-lg shadow-md hover:shadow-lg transition-all duration-300"
+              className="w-full h-12 rounded-lg bg-abugida-500 hover:bg-abugida-600 text-white text-lg shadow-md hover:shadow-lg transition-all duration-300"
               aria-label="Initiate Withdrawal"
             >
               {isLoading ? (

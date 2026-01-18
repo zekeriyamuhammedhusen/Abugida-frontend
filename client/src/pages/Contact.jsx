@@ -12,7 +12,6 @@ import {
   Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,8 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useLanguage } from "@/context/LanguageContext";
 
 function Contact() {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -54,7 +55,7 @@ function Contact() {
     // Simulate form submission
     setTimeout(() => {
       toast.success(
-        "Your message has been sent successfully! We'll get back to you soon."
+        t("contact.subtitle")
       );
       setFormData({
         name: "",
@@ -70,24 +71,20 @@ function Contact() {
 
   const faqs = [
     {
-      question: "How do I enroll in a course?",
-      answer:
-        "To enroll in a course, create an account or log in, browse our course catalog, select your desired course, and click the 'Enroll' button. Follow the checkout process to complete your enrollment.",
+      question: t("contact.faq.q1"),
+      answer: t("contact.faq.a1"),
     },
     {
-      question: "Can I access courses on mobile devices?",
-      answer:
-        "Yes, Fidel Hub is fully responsive and optimized for mobile devices. You can access your courses on smartphones and tablets through our mobile-friendly website.",
+      question: t("contact.faq.q2"),
+      answer: t("contact.faq.a2"),
     },
     {
-      question: "What payment methods do you accept?",
-      answer:
-        "We accept payments through Chapa, which supports various payment methods including credit/debit cards, mobile money, and bank transfers specific to Ethiopia.",
+      question: t("contact.faq.q3"),
+      answer: t("contact.faq.a3"),
     },
     {
-      question: "How do I become an instructor?",
-      answer:
-        "To become an instructor, first create an account by submitting the required information. After your registration is reviewed and approved by the admin, you will gain access to instructor features and can start teaching.",
+      question: t("contact.faq.q4"),
+      answer: t("contact.faq.a4"),
     },
   ];
   return (
@@ -106,11 +103,10 @@ function Contact() {
               className="text-center"
             >
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                Contact Us
+                {t("contact.title")}
               </h1>
               <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto">
-                Have questions or feedback? We're here to help. Reach out to our
-                team using any of the methods below.
+                {t("contact.subtitle")}
               </p>
             </motion.div>
           </div>
@@ -128,12 +124,10 @@ function Contact() {
             >
               <div>
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">
-                  Get in Touch
+                  {t("contact.getInTouch")}
                 </h2>
                 <p className="text-muted-foreground mb-8">
-                  Whether you have a question about our courses, need technical
-                  support, or want to explore partnership opportunities, our
-                  team is ready to assist you.
+                  {t("contact.getInTouchDesc")}
                 </p>
               </div>
 
@@ -144,7 +138,7 @@ function Contact() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                      Email
+                      {t("contact.email")}
                     </h3>
                     <p className="text-muted-foreground">info@abugida.edu</p>
                     <p className="text-muted-foreground">
@@ -159,7 +153,7 @@ function Contact() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                      Phone
+                      {t("contact.phone")}
                     </h3>
                     <p className="text-muted-foreground">+251 11 234 5678</p>
                     <p className="text-muted-foreground">+251 91 234 5678</p>
@@ -172,7 +166,7 @@ function Contact() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                      Location
+                      {t("contact.location")}
                     </h3>
                     <p className="text-muted-foreground">
                       123 Education Street
@@ -189,13 +183,13 @@ function Contact() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                      Hours
+                      {t("contact.hours")}
                     </h3>
                     <p className="text-muted-foreground">
-                      Monday - Friday: 8:30 AM - 5:00 PM
+                      {t("contact.hours.weekday")}
                     </p>
                     <p className="text-muted-foreground">
-                      Saturday: 9:00 AM - 1:00 PM
+                      {t("contact.hours.sat")}
                     </p>
                   </div>
                 </div>
@@ -203,7 +197,7 @@ function Contact() {
 
               <div className="pt-6">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                  Follow Us On Social Media
+                  {t("contact.follow")}
                 </h3>
                 <div className="flex space-x-4">
                   {[
@@ -256,7 +250,7 @@ function Contact() {
               className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-8"
             >
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">
-                Send us a Message
+                  {t("contact.form.title")}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 gap-4">
@@ -265,14 +259,14 @@ function Contact() {
                       htmlFor="name"
                       className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1"
                     >
-                      Your Name
+                        {t("contact.form.name")}
                     </label>
                     <Input
                       id="name"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="Enter your full name"
+                        placeholder={t("signup.placeholder.name")}
                       required
                       className="w-full"
                     />
@@ -283,7 +277,7 @@ function Contact() {
                       htmlFor="email"
                       className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1"
                     >
-                      Email Address
+                      {t("contact.form.email")}
                     </label>
                     <Input
                       id="email"
@@ -291,7 +285,7 @@ function Contact() {
                       type="email"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="Your email address"
+                      placeholder={t("signup.placeholder.email")}
                       required
                       className="w-full"
                     />
@@ -302,30 +296,30 @@ function Contact() {
                       htmlFor="subject"
                       className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1"
                     >
-                      Subject
+                      {t("contact.form.subject")}
                     </label>
                     <Select
                       onValueChange={handleSubjectChange}
                       value={formData.subject}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a subject" />
+                        <SelectValue placeholder={t("contact.form.subject")}/>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="general">General Inquiry</SelectItem>
+                        <SelectItem value="general">{t("contact.form.subject.general")}</SelectItem>
                         <SelectItem value="courses">
-                          Course Information
+                          {t("contact.form.subject.courses")}
                         </SelectItem>
                         <SelectItem value="technical">
-                          Technical Support
+                          {t("contact.form.subject.technical")}
                         </SelectItem>
                         <SelectItem value="billing">
-                          Billing & Payments
+                          {t("contact.form.subject.billing")}
                         </SelectItem>
                         <SelectItem value="partnership">
-                          Partnership Opportunities
+                          {t("contact.form.subject.partnership")}
                         </SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="other">{t("contact.form.subject.other")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -335,14 +329,14 @@ function Contact() {
                       htmlFor="message"
                       className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1"
                     >
-                      Message
+                      {t("contact.form.message")}
                     </label>
                     <Textarea
                       id="message"
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
-                      placeholder="Please describe how we can help you"
+                      placeholder={t("contact.form.placeholder.message")}
                       rows={5}
                       required
                       className="w-full"
@@ -358,12 +352,12 @@ function Contact() {
                   {isSubmitting ? (
                     <>
                       <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin mr-2" />
-                      Sending...
+                      {t("contact.form.sending")}
                     </>
                   ) : (
                     <>
                       <Send className="w-4 h-4 mr-2" />
-                      Send Message
+                      {t("contact.form.send")}
                     </>
                   )}
                 </Button>
@@ -402,10 +396,10 @@ function Contact() {
               className="text-center mb-12"
             >
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-                Frequently Asked Questions
+                  {t("contact.faq.title")}
               </h2>
                 <p className="text-muted-foreground max-w-3xl mx-auto">
-                Find quick answers to common questions about Abugida.
+                  {t("contact.getInTouchDesc")}
               </p>
             </motion.div>
 
@@ -416,8 +410,9 @@ function Contact() {
                   className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm"
                 >
                   <Button
-                    type="submit"
+                    type="button"
                     className="w-full bg-abugida-500 hover:bg-abugida-600 text-white"
+                    onClick={() => toggle(index)}
                   >
                     {faq.question}
                     <span className="ml-2 text-xl">
@@ -447,9 +442,6 @@ function Contact() {
         </div>
       </div>
 
-      <div className="fixed bottom-6 right-6 z-50">
-        <ThemeToggle />
-      </div>
     </div>
   );
 }

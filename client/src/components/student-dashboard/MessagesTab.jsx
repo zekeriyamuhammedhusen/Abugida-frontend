@@ -15,10 +15,12 @@ import axios from "axios";
 import api from "@/lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export const MessagesTab = () => {
   const { user } = useAuth();
   const socket = useSocket();
+  const { t } = useLanguage();
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -33,13 +35,20 @@ export const MessagesTab = () => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const API_URL = null;
-const handleNewMessage = (message) => {
-  console.log("Received new message via socket:", message);
-  if (message.conversationId === selectedConversation._id) {
-    setMessages((prev) => [...prev, message]);
-  }
-};
+  const getSenderId = (message) => {
+    if (!message) return "";
+    if (message.sender?._id) return message.sender._id;
+    if (message.senderId) return message.senderId;
+    if (typeof message.sender === "string") return message.sender;
+    return "";
+  };
+
+  const normalizeIncomingMessage = (message) => ({
+    ...message,
+    senderId: message?.senderId || message?.sender?._id || message?.sender || "",
+    sender: message?.sender || message?.senderId || message?.sender?._id || "",
+    createdAt: message?.createdAt || new Date().toISOString(),
+  });
 
   // Fetch conversations
   useEffect(() => {
@@ -68,7 +77,10 @@ const handleNewMessage = (message) => {
         try {
           setIsLoading(true);
           const response = await api.get(`/api/chat/messages/${selectedConversation._id}`);
-          setMessages(response.data);
+          const normalized = Array.isArray(response.data)
+            ? response.data.map(normalizeIncomingMessage)
+            : [];
+          setMessages(normalized);
         } catch (error) {
           console.error("Error fetching messages:", error);
         } finally {
@@ -89,16 +101,16 @@ const handleNewMessage = (message) => {
     if (!socket || !selectedConversation) return;
 
     const handleNewMessage = (message) => {
-      if (message.conversationId === selectedConversation._id) {
-        setMessages((prev) => [...prev, message]);
+      if (message?.conversationId === selectedConversation._id) {
+        const normalized = normalizeIncomingMessage(message);
+        setMessages((prev) => [...prev, normalized]);
       }
     };
 
     const handleMessageUpdated = (updatedMessage) => {
+      const normalized = normalizeIncomingMessage(updatedMessage);
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === updatedMessage._id ? updatedMessage : msg
-        )
+        prev.map((msg) => (msg._id === normalized._id ? normalized : msg))
       );
     };
 
@@ -127,30 +139,55 @@ const handleNewMessage = (message) => {
   }, [socket, selectedConversation]);
 
   const handleSendMessage = async () => {
-    if ((!newMessage.trim() && !file) || isSending) return;
+    if ((!newMessage.trim() && !file) || isSending || !selectedConversation) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const tempMessage = {
+      _id: tempId,
+      conversationId: selectedConversation._id,
+      senderId: user._id,
+      sender: user._id,
+      text: newMessage,
+      createdAt: new Date().toISOString(),
+      isTemp: true,
+    };
+
+    // Show immediately for the sender
+    setMessages((prev) => [...prev, tempMessage]);
+    setNewMessage("");
+    setFile(null);
 
     try {
       setIsSending(true);
       const formData = new FormData();
       formData.append("conversationId", selectedConversation._id);
       formData.append("senderId", user._id);
-      formData.append("text", newMessage);
+      formData.append("text", tempMessage.text);
       if (file) formData.append("file", file);
 
       const response = await api.post(`/api/chat/messages`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // setMessages((prev) => [...prev, response.data]);
-      setNewMessage("");
-      setFile(null);
+      const saved = {
+        ...normalizeIncomingMessage(response.data),
+        _id: response.data?._id || tempId,
+        conversationId: selectedConversation._id,
+      };
+
+      // Replace temp with saved
+      setMessages((prev) =>
+        prev.map((msg) => (msg._id === tempId ? saved : msg))
+      );
 
       socket.emit("sendMessage", {
-        ...response.data,
+        ...saved,
         conversationId: selectedConversation._id,
       });
     } catch (error) {
       console.error("Error sending message:", error);
+      // Remove temp on error
+      setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
     } finally {
       setIsSending(false);
     }
@@ -208,11 +245,11 @@ const handleEdit = (messageId, newText) => {
 
       confirmationPopup.innerHTML = `
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 max-w-sm w-full">
-          <h2 class="text-lg font-medium text-slate-900 dark:text-white mb-4">Confirm Deletion</h2>
-          <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Are you sure you want to delete this message?</p>
+          <h2 class="text-lg font-medium text-slate-900 dark:text-white mb-4">${t("student.messages.confirmTitle")}</h2>
+          <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">${t("student.messages.confirmBody")}</p>
           <div class="flex justify-end gap-2">
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600" id="cancelButton">Cancel</button>
-            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 text-white hover:bg-red-600" id="confirmButton">Delete</button>
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600" id="cancelButton">${t("student.messages.confirmCancel")}</button>
+            <button class="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 text-white hover:bg-red-600" id="confirmButton">${t("student.messages.confirmDelete")}</button>
           </div>
         </div>
       `;
@@ -342,7 +379,7 @@ const handleEdit = (messageId, newText) => {
             />
             <input
               type="text"
-              placeholder="Search messages..."
+              placeholder={t("student.messages.search")}
               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-fidel-500 dark:focus:ring-fidel-400 focus:border-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -350,7 +387,7 @@ const handleEdit = (messageId, newText) => {
           </div>
         </div>
         <button className="px-4 py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700">
-          Filter
+          {t("student.messages.filter")}
         </button>
       </div>
 
@@ -360,7 +397,7 @@ const handleEdit = (messageId, newText) => {
         <div className="w-72 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
           <div className="p-3 border-b border-slate-200 dark:border-slate-700">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Recent Conversations
+              {t("student.messages.recent")}
             </h3>
           </div>
 
@@ -407,7 +444,7 @@ const handleEdit = (messageId, newText) => {
                   <div className="ml-3 flex-1 min-w-0">
                     <div className="flex justify-between items-baseline">
                       <h4 className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                        {otherUser?.name || "Unknown User"}
+                        {otherUser?.name || t("student.messages.unknown")}
                       </h4>
                       {lastMessage && (
                         <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
@@ -432,10 +469,10 @@ const handleEdit = (messageId, newText) => {
                       >
                         {lastMessage.text ||
                           (lastMessage.fileType === "image"
-                            ? "Sent an image"
+                            ? t("student.messages.sentImage")
                             : lastMessage.fileType === "pdf"
-                            ? "Sent a PDF"
-                            : "Sent a file")}
+                            ? t("student.messages.sentPdf")
+                            : t("student.messages.sentFile"))}
                       </p>
                     )}
                   </div>
@@ -490,20 +527,23 @@ const handleEdit = (messageId, newText) => {
                   </div>
                 ) : (
                   <div className="flex flex-col space-y-3">
-                    {messages.map((msg) => (
+                    {messages.map((msg) => {
+                      const senderId = getSenderId(msg);
+                      const isOwnMessage = senderId === user._id;
+                      const timestamp = msg?.createdAt || msg?.updatedAt || new Date().toISOString();
+
+                      return (
                       <div
                         key={msg._id}
                         className={cn(
                           "flex flex-col",
-                          (msg.sender._id || msg.sender) === user._id
-                            ? "items-end"
-                            : "items-start"
+                          isOwnMessage ? "items-end" : "items-start"
                         )}
                       >
                         <div
                           className={cn(
                             "max-w-[70%] px-4 py-2 rounded-lg",
-                            (msg.sender._id || msg.sender) === user._id
+                            isOwnMessage
                               ? "bg-fidel-500 text-white rounded-tr-none"
                               : "bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-tl-none"
                           )}
@@ -523,13 +563,13 @@ const handleEdit = (messageId, newText) => {
                                   onClick={handleCancelEdit}
                                   className="px-2 py-1 text-xs rounded bg-white/20 hover:bg-white/30"
                                 >
-                                  Cancel
+                                  {t("student.messages.edit.cancel")}
                                 </button>
                                 <button
                                   onClick={handleUpdateMessage}
                                   className="px-2 py-1 text-xs rounded bg-white hover:bg-white/90 text-abugida-500"
                                 >
-                                  Save
+                                  {t("student.messages.edit.save")}
                                 </button>
                               </div>
                             </div>
@@ -540,7 +580,7 @@ const handleEdit = (messageId, newText) => {
                               )}
                               {renderFilePreview(msg)}
                               <p className="text-xs opacity-70 mt-1 text-right">
-                                {new Date(msg.createdAt).toLocaleTimeString(
+                                {new Date(timestamp).toLocaleTimeString(
                                   [],
                                   {
                                     hour: "2-digit",
@@ -551,29 +591,28 @@ const handleEdit = (messageId, newText) => {
                             </>
                           )}
                         </div>
-
                         {/* Edit/Delete Buttons (only for owner) */}
-                        {(msg.sender._id || msg.sender) === user._id &&
-                          !editingMessageId && (
-                            <div className="flex gap-2 mt-1">
-                              <button
-                                onClick={() => handleEditMessage(msg)}
-                                className="text-slate-500 hover:text-abugida-500 transition-colors"
-                                title="Edit"
-                              >
-                                <Edit size={14} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteMessage(msg._id)}
-                                className="text-slate-500 hover:text-red-500 transition-colors"
-                                title="Delete"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          )}
+                        {isOwnMessage && !editingMessageId && (
+                          <div className="flex gap-2 mt-1">
+                            <button
+                              onClick={() => handleEditMessage(msg)}
+                              className="text-slate-500 hover:text-abugida-500 transition-colors"
+                              title="Edit"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMessage(msg._id)}
+                              className="text-slate-500 hover:text-red-500 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    ))}
+                      );
+                    })}
                     <div ref={messagesEndRef} />
                   </div>
                 )}
@@ -622,18 +661,19 @@ const handleEdit = (messageId, newText) => {
                     onKeyPress={(e) => {
                       if (e.key === "Enter") handleSendMessage();
                     }}
-                    placeholder="Type your message..."
+                    placeholder={t("student.messages.inputPlaceholder")}
                     className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-fidel-500 dark:focus:ring-fidel-400 focus:border-transparent"
                   />
                   <button
                     onClick={handleSendMessage}
                     disabled={isSending || (!newMessage.trim() && !file)}
                     className="text-white bg-fidel-500 hover:bg-fidel-600 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label={t("student.messages.inputPlaceholder")}
                   >
                     {isSending ? (
                       <Loader2 className="animate-spin" />
                     ) : (
-                      <Send />
+                      <Send className="h-5 w-5" />
                     )}
                   </button>
                 </div>
@@ -644,7 +684,7 @@ const handleEdit = (messageId, newText) => {
               {isLoading ? (
                 <Loader2 className="animate-spin" />
               ) : (
-                "Select a conversation to start messaging"
+                t("student.messages.selectConversation")
               )}
             </div>
           )}

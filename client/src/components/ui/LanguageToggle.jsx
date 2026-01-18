@@ -42,14 +42,6 @@ const LanguageToggle = () => {
           className: language === "am" ? "bg-accent" : "",
         },
         t("amharic")
-      ),
-      React.createElement(
-        DropdownMenuItem,
-        {
-          onClick: () => setLanguage("ti"),
-          className: language === "ti" ? "bg-accent" : "",
-        },
-        t("tigrinya")
       )
     )
   );

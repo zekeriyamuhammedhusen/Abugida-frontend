@@ -34,6 +34,7 @@ import PaymentFailed from "./pages/PaymentFailed";
 import VerifyPayment from "./../src/components/Payment/VerifyPayment";
 import GetCertified from "./components/course details/GetCertified";
 import LessonPlayer from "./pages/LessonPlayer";
+import TranslatorPage from "./pages/TranslatorPage";
 
 const MainLayout = ({ children }) => (
   <>
@@ -129,6 +130,15 @@ const App = () => {
           element={
             <MainLayout>
               <Contact />
+            </MainLayout>
+          }
+        />
+
+        <Route
+          path="/translate"
+          element={
+            <MainLayout>
+              <TranslatorPage />
             </MainLayout>
           }
         />

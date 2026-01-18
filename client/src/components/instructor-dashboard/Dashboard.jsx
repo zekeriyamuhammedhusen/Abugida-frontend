@@ -27,10 +27,11 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 
-const Dashboard = () => {
+const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => {
   const [earningsData, setEarningsData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [dateFilter, setDateFilter] = useState("all");
+  const [internalDateFilter, setInternalDateFilter] = useState("all");
+  const dateFilter = controlledDateFilter ?? internalDateFilter;
   const [error, setError] = useState(null);
 
   const getDateRange = (filter) => {
@@ -86,8 +87,26 @@ const Dashboard = () => {
   }, [dateFilter]);
 
   const handleDateFilterChange = (value) => {
-    setDateFilter(value);
+    if (onDateFilterChange) onDateFilterChange(value);
+    else setInternalDateFilter(value);
   };
+
+  const totalStudents = earningsData
+    ? earningsData?.summary?.uniqueStudentCount ??
+      (earningsData?.perCourseRevenue || [])
+        .filter((course) => !!course?.courseName)
+        .reduce((acc, course) => acc + (course.studentCount || 0), 0) ?? 0
+    : 0;
+
+  const activeCourses = (earningsData?.perCourseRevenue || []).filter((course) => !!course?.courseName);
+
+  const formatCurrency = (value = 0) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "ETB",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value || 0);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-4 sm:p-6 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 min-h-screen">
@@ -100,7 +119,7 @@ const Dashboard = () => {
             Track your course performance and earnings
           </p>
         </div>
-        <Select onValueChange={handleDateFilterChange} defaultValue="all">
+        <Select onValueChange={handleDateFilterChange} value={dateFilter}>
           <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
             <Calendar className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Select period" />
@@ -129,28 +148,43 @@ const Dashboard = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="border-none bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg rounded-xl group hover:shadow-teal-100 dark:hover:shadow-teal-900/30 transition-all">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Total Earnings
-                </CardTitle>
-                <div className="p-2 rounded-lg bg-teal-50 dark:bg-teal-900/30 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/40">
-                  <DollarSign className="h-5 w-5 text-teal-600 dark:text-teal-400" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {earningsData?.summary.totalInstructorEarnings.toLocaleString('en-US', {
-                    style: 'currency',
-                    currency: 'ETB'
-                  })}
-                </div>
-                <div className="flex items-center mt-2">
-                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                  <span className="text-xs text-green-500">+12% from last period</span>
-                </div>
-              </CardContent>
-            </Card>
+              <Card className="border-none bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg rounded-xl group hover:shadow-teal-100 dark:hover:shadow-teal-900/30 transition-all">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Gross Revenue (100%)
+                  </CardTitle>
+                  <div className="p-2 rounded-lg bg-teal-50 dark:bg-teal-900/30 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/40">
+                    <DollarSign className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {formatCurrency(earningsData?.summary.totalReceived)}
+                  </div>
+                  <div className="flex items-center mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    This is the full amount students paid.
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg rounded-xl group hover:shadow-blue-100 dark:hover:shadow-blue-900/30 transition-all">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Your Earnings (80% share)
+                  </CardTitle>
+                  <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40">
+                    <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {formatCurrency(earningsData?.summary.totalInstructorEarnings)}
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Calculated as 80% of gross revenue.
+                  </div>
+                </CardContent>
+              </Card>
 
             <Card className="border-none bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg rounded-xl group hover:shadow-blue-100 dark:hover:shadow-blue-900/30 transition-all">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -189,12 +223,12 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {earningsData?.perCourseRevenue.reduce((acc, course) => acc + course.studentCount, 0)}
+                  {totalStudents}
                 </div>
                 <div className="flex items-center mt-2">
                   <BookOpen className="h-4 w-4 text-gray-400 mr-1" />
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Across {earningsData?.perCourseRevenue.length} courses
+                    Across {activeCourses.length} courses
                   </span>
                 </div>
               </CardContent>
@@ -211,7 +245,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {earningsData?.perCourseRevenue.map((course) => (
+                  {activeCourses.map((course) => (
                     <div
                       key={course._id}
                       className="flex flex-col md:flex-row justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-colors"
@@ -236,7 +270,9 @@ const Dashboard = () => {
 </p>
 
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {((course.totalEarnings / course.totalPayments) * 100).toFixed(0)}% of total
+                          {course.totalPayments > 0
+                            ? `${((course.totalEarnings / course.totalPayments) * 100).toFixed(0)}% of total`
+                            : "No payments yet"}
                         </p>
                       </div>
                     </div>
@@ -269,10 +305,7 @@ const Dashboard = () => {
                   <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Your Earnings</span>
                     <span className="font-medium text-teal-600 dark:text-teal-400">
-                      {earningsData?.summary.totalInstructorEarnings.toLocaleString('en-US', {
-                        style: 'currency',
-                        currency: 'ETB'
-                      })}
+                      {formatCurrency(earningsData?.summary.totalInstructorEarnings)}
                     </span>
                   </div>
                   <div className="flex justify-between">

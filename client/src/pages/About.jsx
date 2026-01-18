@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { GraduationCap, BookOpen, Users, Globe, Award } from "lucide-react";
-import ThemeToggle from "@/components/ui/ThemeToggle";
+import { useLanguage } from "@/context/LanguageContext";
 
 function About() {
+  const { t } = useLanguage();
+
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900">
       <div className="flex-1 pt-24 pb-12">
@@ -20,11 +22,10 @@ function About() {
               className="text-center"
             >
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                About Abugida
+                {t("about.title")}
               </h1>
               <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto">
-                Empowering education through technology and innovation in
-                Ethiopia and beyond.
+                {t("about.subtitle")}
               </p>
             </motion.div>
           </div>
@@ -41,20 +42,13 @@ function About() {
               className="space-y-6"
             >
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
-                Our Mission
+                {t("about.missionTitle")}
               </h2>
               <p className="text-muted-foreground">
-                At Abugida, our mission is to democratize education by
-                providing accessible, high-quality learning experiences to
-                students across Ethiopia. We believe that education is the
-                cornerstone of development, and we are committed to empowering
-                individuals to reach their full potential through innovative
-                learning solutions.
+                {t("about.missionP1")}
               </p>
               <p className="text-muted-foreground">
-                We strive to bridge educational gaps, foster a culture of
-                continuous learning, and build a community where knowledge is
-                shared freely and equitably.
+                {t("about.missionP2")}
               </p>
             </motion.div>
 
@@ -66,19 +60,13 @@ function About() {
               className="space-y-6"
             >
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
-                Our Vision
+                {t("about.visionTitle")}
               </h2>
               <p className="text-muted-foreground">
-                We envision a future where every Ethiopian has access to quality
-                education regardless of their location, background, or economic
-                status. Abugida aims to be the leading educational platform in
-                Ethiopia, known for innovation, inclusivity, and excellence.
+                {t("about.visionP1")}
               </p>
               <p className="text-muted-foreground">
-                By harnessing the power of technology, we seek to transform the
-                educational landscape, creating opportunities for lifelong
-                learning and professional development that contribute to the
-                nation's growth and prosperity.
+                {t("about.visionP2")}
               </p>
             </motion.div>
           </div>
@@ -95,11 +83,10 @@ function About() {
               className="text-center mb-12"
             >
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-                Our Core Values
+                {t("about.valuesTitle")}
               </h2>
               <p className="text-muted-foreground max-w-3xl mx-auto">
-                These principles guide everything we do at Abugida, shaping
-                our culture and our approach to education.
+                {t("about.valuesSubtitle")}
               </p>
             </motion.div>
 
@@ -107,27 +94,23 @@ function About() {
               {[
                 {
                   icon: <GraduationCap className="h-10 w-10 text-abugida-500" />,
-                  title: "Excellence",
-                  description:
-                    "We are committed to the highest standards of academic integrity and quality in all our offerings.",
+                  title: t("about.value.excellence.title"),
+                  description: t("about.value.excellence.desc"),
                 },
                 {
                   icon: <BookOpen className="h-10 w-10 text-abugida-500" />,
-                  title: "Accessibility",
-                  description:
-                    "We believe education should be accessible to all, regardless of physical location or economic background.",
+                  title: t("about.value.accessibility.title"),
+                  description: t("about.value.accessibility.desc"),
                 },
                 {
                   icon: <Users className="h-10 w-10 text-abugida-500" />,
-                  title: "Community",
-                  description:
-                    "We foster a supportive community where students and instructors collaborate and grow together.",
+                  title: t("about.value.community.title"),
+                  description: t("about.value.community.desc"),
                 },
                 {
                   icon: <Globe className="h-10 w-10 text-abugida-500" />,
-                  title: "Innovation",
-                  description:
-                    "We continuously explore new technologies and methodologies to enhance the learning experience.",
+                  title: t("about.value.innovation.title"),
+                  description: t("about.value.innovation.desc"),
                 },
               ].map((value, index) => (
                 <motion.div
@@ -159,11 +142,10 @@ function About() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-              Our Team
+              {t("about.teamTitle")}
             </h2>
             <p className="text-muted-foreground max-w-3xl mx-auto">
-              Meet the passionate educators and technologists behind Abugida
-              who are dedicated to transforming education in Ethiopia.
+              {t("about.teamSubtitle")}
             </p>
           </motion.div>
 
@@ -242,20 +224,17 @@ function About() {
               className="text-center"
             >
               <h2 className="text-3xl font-bold mb-6">
-                Join Our Educational Journey
+                {t("about.ctaTitle")}
               </h2>
               <p className="text-lg mb-8 max-w-3xl mx-auto">
-                Whether you're a student eager to learn, an instructor
-                passionate about teaching, or an institution looking to expand
-                your reach, Fidel Hub welcomes you to be part of our educational
-                community.
+                {t("about.ctaDesc")}
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link
                   to="/courses"
                   className="bg-white text-abugida-500 hover:bg-slate-100 px-6 py-3 rounded-md font-medium transition-colors"
                 >
-                  Explore Courses
+                  {t("about.ctaExplore")}
                 </Link>
               </div>
             </motion.div>
@@ -263,9 +242,6 @@ function About() {
         </div>
       </div>
 
-      <div className="fixed bottom-6 right-6 z-50">
-        <ThemeToggle />
-      </div>
     </div>
   );
 }

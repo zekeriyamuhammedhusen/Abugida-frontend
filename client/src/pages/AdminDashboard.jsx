@@ -22,19 +22,21 @@ import UserDetail from "../pages/Userdetails";
 import Logo from "../components/layout/Logo";
 import { useAuth } from "../context/AuthContext";
 import CourseTable from "../components/instructor-dashboard/CourseTable";
+import { useLanguage } from "@/context/LanguageContext";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const { t } = useLanguage();
 
   const navItems = [
-    { id: "overview", label: "Overview", icon: Layers },
-    { id: "users", label: "User Management", icon: Users },
-    { id: "courses", label: "Course Management", icon: BookOpen },
-    { id: "analytics", label: "Analytics", icon: PieChart },
-    { id: "payments", label: "Payments", icon: Award },
-    { id: "settings", label: " Settings", icon: Settings },
+    { id: "overview", label: t("admin.nav.overview"), icon: Layers },
+    { id: "users", label: t("admin.nav.users"), icon: Users },
+    { id: "courses", label: t("admin.nav.courses"), icon: BookOpen },
+    { id: "analytics", label: t("admin.nav.analytics"), icon: PieChart },
+    { id: "payments", label: t("admin.nav.payments"), icon: Award },
+    { id: "settings", label: t("admin.nav.settings"), icon: Settings },
   ];
 
   const handleNavItemClick = (id) => {
@@ -116,7 +118,7 @@ const AdminDashboard = () => {
       <div className="flex-1 flex flex-col p-5 overflow-auto h-[100vh]">
         <header className="flex justify-between items-start mb-6">
           <h1 className="text-2xl font-bold pl-10">
-            {activeTab === "user-detail" ? "User Details" : "Admin Dashboard"}
+            {activeTab === "user-detail" ? t("admin.header.userDetails") : t("admin.header.dashboard")}
           </h1>
           <div className="flex items-center space-x-3">
             <ThemeToggle />
@@ -127,7 +129,7 @@ const AdminDashboard = () => {
           <div className="mb-4 pl-10">
             <Button variant="ghost" onClick={handleBackToUsers}>
               <ChevronLeft size={16} className="mr-2" />
-              Back to User Management
+              {t("admin.backToUsers")}
             </Button>
           </div>
         )}
@@ -149,11 +151,10 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold">
-                    Welcome to the Admin Panel
+                    {t("admin.overview.welcome")}
                   </h2>
                   <p className="text-muted-foreground mt-1">
-                    Manage users, moderate courses, view analytics, and control
-                    payments here.
+                    {t("admin.overview.subtitle")}
                   </p>
                 </div>
               </div>

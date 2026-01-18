@@ -6,7 +6,6 @@ import { CourseContent } from "../components/course details/CourseContent";
 import { CourseProgress } from "../components/course details/CourseProgress";
 import { FreeVideosDialog } from "../components/course details/FreeVideosDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 import { formatDuration, calculateTotalDuration, calculateProgress } from "../Helper/utils";
 import VideoPlayer from "@/components/video-player";
 import QuizView from "../components/Quize/QuizView";
@@ -254,9 +253,6 @@ export const CourseDetails = () => {
         onPrev={handlePrevFreeVideo}
       />
 
-      <div className="fixed bottom-6 right-6 z-50">
-        <ThemeToggle />
-      </div>
     </div>
   );
 };

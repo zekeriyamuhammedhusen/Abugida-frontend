@@ -1,25 +1,24 @@
 // components/home/TestimonialCard.jsx
 import { motion } from "framer-motion";
+import { useLanguage } from "@/context/LanguageContext";
 
 const TestimonialCard = ({ index }) => {
+  const { t } = useLanguage();
   const testimonials = [
     {
-      quote:
-        "The quality of the courses and the interactive nature of the platform has exceeded my expectations. I've been able to learn at my own pace while still feeling connected to instructors and peers.",
+      quote: t('home.testimonials.t1.quote'),
       name: "Abebe Z",
-      role: "Computer Science Student",
+      role: t('home.testimonials.t1.role'),
     },
     {
-      quote:
-        "As someone with a busy schedule, the flexibility of Fidel Hub has been a game-changer. The mobile responsiveness means I can learn on the go, and the real-time support has helped me overcome challenges quickly.",
+      quote: t('home.testimonials.t2.quote'),
       name: "Kebede M",
-      role: "Business Administration",
+      role: t('home.testimonials.t2.role'),
     },
     {
-      quote:
-        "The student services integration is what sets Fidel Hub apart. Being able to manage my dormitory application and transcript requests in the same place I take my courses has saved me so much time and hassle.",
+      quote: t('home.testimonials.t3.quote'),
       name: "Alemitu T",
-      role: "Psychology Major",
+      role: t('home.testimonials.t3.role'),
     },
   ];
 

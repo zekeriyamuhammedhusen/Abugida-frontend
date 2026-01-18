@@ -5,19 +5,21 @@ import AnimatedButton from "../ui/AnimatedButton ";
 import { motion } from "framer-motion";
 import axios from "axios";
 import api from "@/lib/api";
+import { useLanguage } from "@/context/LanguageContext";
 
-const categories = [
-  "All",
-  "Machine Learning",
-  "web-development",
-  "Business",
-  "Psychology",
-  "Finance",
-  "Design",
-  "Languages"
+const categoryDefs = [
+  { value: "All", key: "popular.category.all" },
+  { value: "Machine Learning", key: "popular.category.machineLearning" },
+  { value: "web-development", key: "popular.category.web" },
+  { value: "Business", key: "popular.category.business" },
+  { value: "Psychology", key: "popular.category.psychology" },
+  { value: "Finance", key: "popular.category.finance" },
+  { value: "Design", key: "popular.category.design" },
+  { value: "Languages", key: "popular.category.languages" },
 ];
 
 const PopularCourses = () => {
+  const { t } = useLanguage();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -121,13 +123,13 @@ const PopularCourses = () => {
     return (
       <section className="py-20 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-6 md:px-8 text-center">
-          <h2 className="text-xl font-semibold mb-2 text-red-500">Error loading courses</h2>
+          <h2 className="text-xl font-semibold mb-2 text-red-500">{t('popular.error.title')}</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-fidel-500 text-white rounded-lg hover:bg-fidel-600 transition-colors"
           >
-            Try Again
+            {t('popular.error.retry')}
           </button>
         </div>
       </section>
@@ -139,27 +141,27 @@ const PopularCourses = () => {
       <div className="max-w-7xl mx-auto px-6 md:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white">
-            Explore Popular Courses
+            {t('popular.title')}
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Discover our most popular courses across various disciplines.
+            {t('popular.subtitle')}
           </p>
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
           <div className="overflow-x-auto w-full md:w-auto">
             <div className="flex space-x-2 min-w-max">
-              {categories.map((category) => (
+              {categoryDefs.map((category) => (
                 <button
-                  key={category}
-                  onClick={() => setActiveCategory(category)}
+                  key={category.value}
+                  onClick={() => setActiveCategory(category.value)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                    activeCategory === category
+                    activeCategory === category.value
                       ? "bg-fidel-500 text-white shadow-sm"
                       : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                   }`}
                 >
-                  {category}
+                  {t(category.key)}
                 </button>
               ))}
             </div>
@@ -171,10 +173,10 @@ const PopularCourses = () => {
               onChange={(e) => setSortBy(e.target.value)}
               className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm"
             >
-              <option value="popular">Popularity</option>
-              <option value="rating">Rating</option>
-              <option value="price">Price</option>
-              <option value="title">Title</option>
+              <option value="popular">{t('popular.sort.popularity')}</option>
+              <option value="rating">{t('popular.sort.rating')}</option>
+              <option value="price">{t('popular.sort.price')}</option>
+              <option value="title">{t('popular.sort.title')}</option>
             </select>
             <button
               onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
@@ -229,17 +231,17 @@ const PopularCourses = () => {
               </svg>
             </div>
             <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">
-              No courses found
+              {t('popular.empty.title')}
             </h3>
             <p className="text-muted-foreground">
-              Try changing your filters or come back later
+              {t('popular.empty.desc')}
             </p>
           </div>
         )}
 
         <div className="mt-12 text-center">
           <AnimatedButton to="/courses" variant="outline" size="lg">
-            View All Courses
+            {t('popular.viewAll')}
             <ArrowRight className="ml-2" size={18} />
           </AnimatedButton>
         </div>

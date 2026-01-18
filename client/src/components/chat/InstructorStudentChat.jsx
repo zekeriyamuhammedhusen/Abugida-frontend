@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Send, Search, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,12 @@ const InstructorStudentChat = ({ onBack }) => {
   const [activeContact, setActiveContact] = useState(null);
   const [message, setMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  // Auto-select the first contact so messages show immediately after sending
+  useEffect(() => {
+    if (!activeContact && contacts.length > 0) {
+      setActiveContact(contacts[0].id);
+    }
+  }, [activeContact, contacts.length]);
   
   const contacts = [
     {
@@ -280,8 +286,9 @@ const InstructorStudentChat = ({ onBack }) => {
                         variant="ghost"
                         size="icon"
                         disabled={!message}
+                        aria-label="Send message"
                       >
-                        <Send size={18} />
+                        <Send size={18} className="text-fidel-600" />
                       </Button>
                     </div>
                   </div>

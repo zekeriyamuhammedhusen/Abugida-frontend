@@ -13,9 +13,8 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const autoLogoutTimer = useRef(null);
 
-  // Session expiry (in hours)
-  const SESSION_MAX_AGE_HOURS = 6; // adjust as needed
-  const SESSION_MAX_AGE_MS = SESSION_MAX_AGE_HOURS * 60 * 60 * 1000;
+  // Session expiry matches server token (2 hours)
+  const SESSION_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 
   const clearAutoLogoutTimer = () => {
     if (autoLogoutTimer.current) {
@@ -67,6 +66,16 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
     return () => clearAutoLogoutTimer();
   }, []);
+
+  const refreshUser = async () => {
+    try {
+      const res = await api.get(`/api/auth/me`);
+      setUser(res.data);
+      return res.data;
+    } catch (err) {
+      return null;
+    }
+  };
 
   // Login function
   const login = async (email, password) => {
@@ -128,6 +137,7 @@ export const AuthProvider = ({ children }) => {
         error,
         login,
         logout,
+        refreshUser,
         isAuthenticated: !!user,
         getDashboardPath,
       }}

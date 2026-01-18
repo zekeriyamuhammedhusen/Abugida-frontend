@@ -10,6 +10,7 @@ import {
 
 const PaymentComponent = ({ user }) => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [dateFilter, setDateFilter] = useState("30d");
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -93,8 +94,12 @@ const PaymentComponent = ({ user }) => {
 
         {/* Content */}
         <div className="mt-6">
-          {activeTab === "dashboard" && <Dashboard />}
-          {activeTab === "withdraw" && <Withdrawal user={user} />}
+          {activeTab === "dashboard" && (
+            <Dashboard dateFilter={dateFilter} onDateFilterChange={setDateFilter} />
+          )}
+          {activeTab === "withdraw" && (
+            <Withdrawal user={user} dateFilter={dateFilter} />
+          )}
           {activeTab === "history" && <Transactions />}
         </div>
       </div>

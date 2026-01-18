@@ -5,9 +5,11 @@ import { cn } from "@/lib/utils";
 import axios from "axios";
 import api from "@/lib/api";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export const OverviewTab = ({ courses: propCourses, progressMap: propProgressMap, loading: propLoading, error: propError }) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState([]);
   const [progressMap, setProgressMap] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -107,11 +109,11 @@ export const OverviewTab = ({ courses: propCourses, progressMap: propProgressMap
     .slice(0, 2);
 
   const getLastAccessedDate = (lastAccessed) => {
-    if (!lastAccessed) return "Never";
+    if (!lastAccessed) return t("student.overview.never");
     try {
       return new Date(lastAccessed).toLocaleDateString();
     } catch {
-      return "Unknown";
+      return t("student.overview.unknown");
     }
   };
 
@@ -122,26 +124,26 @@ export const OverviewTab = ({ courses: propCourses, progressMap: propProgressMap
         <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-fidel-100 dark:bg-fidel-900/20 rounded-full opacity-70 dark:opacity-30 -z-10"></div>
         <div className="relative z-10">
           <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
-            Welcome back, {user?.name || "Student"}!
+            {t("student.overview.welcome")}, {user?.name || t("student.sidebar.namePlaceholder") }!
           </h2>
           <p className="text-muted-foreground mt-1">
-            Here's what's happening with your courses today.
+            {t("student.overview.subtitle")}
           </p>
           <div className="mt-4 flex flex-wrap gap-4">
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 shadow-sm">
-              <p className="text-sm text-muted-foreground">Completed</p>
+              <p className="text-sm text-muted-foreground">{t("student.overview.completed")}</p>
               <p className="text-2xl font-semibold text-slate-900 dark:text-white">
                 {completedCourses}
               </p>
             </div>
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 shadow-sm">
-              <p className="text-sm text-muted-foreground">In Progress</p>
+              <p className="text-sm text-muted-foreground">{t("student.overview.inProgress")}</p>
               <p className="text-2xl font-semibold text-slate-900 dark:text-white">
                 {inProgressCourses}
               </p>
             </div>
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 shadow-sm">
-              <p className="text-sm text-muted-foreground">Upcoming</p>
+              <p className="text-sm text-muted-foreground">{t("student.overview.upcoming")}</p>
               <p className="text-2xl font-semibold text-slate-900 dark:text-white">
                 {upcomingCourses}
               </p>
@@ -153,7 +155,7 @@ export const OverviewTab = ({ courses: propCourses, progressMap: propProgressMap
       {/* Continue learning */}
       <section>
         <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">
-          Continue Learning
+          {t("student.overview.continue")}
         </h3>
         {isLoading ? (
           <div className="flex justify-center items-center h-32">
@@ -162,7 +164,7 @@ export const OverviewTab = ({ courses: propCourses, progressMap: propProgressMap
         ) : continueLearningCourses.length === 0 ? (
           <div className="glass-card p-4 text-center">
             <p className="text-sm text-muted-foreground">
-              No in-progress courses to display.
+              {t("student.overview.none")}
             </p>
           </div>
         ) : (
@@ -181,7 +183,7 @@ export const OverviewTab = ({ courses: propCourses, progressMap: propProgressMap
                       {course.title}
                     </h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Last accessed:{" "}
+                      {t("student.overview.lastAccessed")}: {" "}
                       {getLastAccessedDate(progressMap[course._id]?.lastAccessed)}
                     </p>
                     <div className="mt-3 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -199,9 +201,9 @@ export const OverviewTab = ({ courses: propCourses, progressMap: propProgressMap
                     </div>
                     <div className="mt-2 flex justify-between text-xs">
                       <span className="text-muted-foreground">
-                        {progressMap[course._id]?.progressPercentage || 0}% complete
+                        {progressMap[course._id]?.progressPercentage || 0}% {t("student.common.complete")}
                       </span>
-                      <span className="font-medium text-abugida-500">Continue</span>
+                      <span className="font-medium text-abugida-500">{t("student.overview.continue")}</span>
                     </div>
                   </div>
                 </div>

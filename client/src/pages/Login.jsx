@@ -5,12 +5,12 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 import io from 'socket.io-client';
  import { useAuth } from "../context/AuthContext"; // Adjust path as needed
 import axios from "axios";
 import { toast } from "sonner";
 import { useSearchParams } from 'react-router-dom';
+import { useLanguage } from "../context/LanguageContext";
 
 const socket = io(import.meta.env.VITE_API_BASE_URL); 
 
@@ -22,6 +22,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useLanguage();
   
   useEffect(() => {
     if (searchParams.get('blocked') === 'true') {
@@ -125,9 +126,9 @@ const handleSubmit = async (e) => {
             transition={{ duration: 0.5 }}
             className="text-center"
           >
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Welcome back</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">{t("login.title")}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Sign in to your account to continue your learning journey
+              {t("login.subtitle")}
             </p>
           </motion.div>
 
@@ -140,7 +141,7 @@ const handleSubmit = async (e) => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Email address
+                  {t("login.email")}
                 </label>
                 <Input
                   id="email"
@@ -156,7 +157,7 @@ const handleSubmit = async (e) => {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Password
+                  {t("login.password")}
                 </label>
                 <div className="relative">
                   <Input
@@ -172,7 +173,7 @@ const handleSubmit = async (e) => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-slate-900 dark:hover:text-white"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -188,13 +189,13 @@ const handleSubmit = async (e) => {
                     className="h-4 w-4 rounded border-gray-300 text-abugida-600 focus:ring-abugida-500"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">
-                    Remember me
+                    {t("login.rememberMe")}
                   </label>
                 </div>
 
                 <div className="text-sm">
                   <Link to="/forgot-password" className="text-abugida-600 hover:text-abugida-500 font-medium">
-                    Forgot your password?
+                    {t("login.forgot")}
                   </Link>
                 </div>
               </div>
@@ -211,9 +212,9 @@ const handleSubmit = async (e) => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Signing in...
+                      {t("login.signingIn")}
                     </span>
-                  ) : "Sign in"}
+                  ) : t("login.signIn")}
                 </Button>
               </div>
             </form>
@@ -224,18 +225,15 @@ const handleSubmit = async (e) => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="mt-6 text-center text-sm text-muted-foreground"
             >
-              Don't have an account?{" "}
+              {t("login.noAccount")} {" "}
               <Link to="/signup" className="text-abugida-600 hover:text-abugida-500 font-medium">
-                Sign up for free
+                {t("login.signUpFree")}
               </Link>
             </motion.p>
           </motion.div>
         </div>
       </div>
 
-      <div className="fixed bottom-6 right-6 z-50">
-        <ThemeToggle />
-      </div>
     </div>
   );
 };

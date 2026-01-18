@@ -7,9 +7,11 @@ import api from "@/lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from "@/context/LanguageContext";
 
 export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap, loading: propLoading, error: propError }) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState([]);
   const [progressMap, setProgressMap] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -130,10 +132,10 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
-            My Learning
+            {t("student.courses.title")}
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Continue your learning journey
+            {t("student.courses.subtitle")}
           </p>
         </div>
 
@@ -149,9 +151,9 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
                   : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
               )}
             >
-              {filter === "all" && "All Courses"}
-              {filter === "in-progress" && "In Progress"}
-              {filter === "completed" && "Completed"}
+              {filter === "all" && t("student.courses.filter.all")}
+              {filter === "in-progress" && t("student.courses.filter.inProgress")}
+              {filter === "completed" && t("student.courses.filter.completed")}
             </button>
           ))}
         </div>
@@ -161,7 +163,7 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
         {/* Progress Summary Card */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sticky top-4 h-fit">
           <h3 className="font-semibold text-lg mb-4 text-slate-900 dark:text-white">
-            Your Learning Summary
+            {t("student.courses.summaryTitle")}
           </h3>
 
           <div className="space-y-6">
@@ -169,7 +171,7 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-1 text-slate-600 dark:text-slate-300">
-                    <span>Total Courses</span>
+                    <span>{t("student.courses.totalCourses")}</span>
                     <span>{totalCourses}</span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -182,7 +184,7 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
 
                 <div>
                   <div className="flex justify-between text-sm mb-1 text-slate-600 dark:text-slate-300">
-                    <span>Completed Courses</span>
+                    <span>{t("student.courses.completedCourses")}</span>
                     <span>{completedCourses}</span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -201,7 +203,7 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
 
                 <div>
                   <div className="flex justify-between text-sm mb-1 text-slate-600 dark:text-slate-300">
-                    <span>In Progress</span>
+                    <span>{t("student.courses.inProgressCourses")}</span>
                     <span>{inProgressCourses}</span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -220,12 +222,12 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
               </div>
             ) : (
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                No courses to display
+                {t("student.courses.empty.title")}
               </p>
             )}
 
             <Button className="w-full" variant="outline">
-              View All Achievements
+              {t("student.courses.viewAchievements")}
             </Button>
           </div>
         </div>
@@ -235,7 +237,7 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
           <section className="mb-10">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
-                Enrolled Courses
+                {t("student.courses.enrolled")}
               </h3>
             </div>
 
@@ -247,14 +249,14 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
                 <BookOpen className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
                 <h4 className="mt-4 text-lg font-medium text-slate-900 dark:text-white">
-                  No courses found
+                  {t("student.courses.empty.title")}
                 </h4>
                 <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                   {activeFilter === "all"
-                    ? "You haven't enrolled in any courses yet."
+                    ? t("student.courses.empty.all")
                     : activeFilter === "in-progress"
-                    ? "You don't have any courses in progress."
-                    : "You haven't completed any courses yet."}
+                    ? t("student.courses.empty.inProgress")
+                    : t("student.courses.empty.completed")}
                 </p>
               </div>
             ) : (
@@ -311,9 +313,9 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
 
                         <div className="mb-4">
                           <div className="flex justify-between text-sm mb-1 text-slate-600 dark:text-slate-300">
-                            <span>{Math.round(percentage)}% complete</span>
+                            <span>{Math.round(percentage)}% {t("student.common.complete")}</span>
                             <span>
-                              {completedLessons}/{total} lessons
+                              {completedLessons}/{total} {t("student.courses.lessons")}
                             </span>
                           </div>
                           <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -330,14 +332,14 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
                         </div>
 
                         <Button onClick={() => handleRedirect(course, isCompleted)}>
-  {isCompleted ? "Get Certificate" : "Continue Learning"}
+  {isCompleted ? t("student.courses.getCertificate") : t("student.courses.continue")}
 </Button>
 
 
                         <div className="flex items-center text-sm text-slate-500 dark:text-slate-400 mt-2">
                           <BookOpen className="h-4 w-4 mr-1.5" />
                           <span>
-                            Last accessed:{" "}
+                            {t("student.courses.lastAccessed")}: {" "}
                             {getLastAccessedDate(progress?.lastAccessed)}
                           </span>
                         </div>

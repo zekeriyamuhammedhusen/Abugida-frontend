@@ -1,26 +1,32 @@
 import { useState, useEffect } from "react";
 import { Search, Filter, ArrowUp, ArrowDown } from "lucide-react";
 import CourseCard from "@/components/home/CourseCard";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
+import { useLanguage } from "@/context/LanguageContext";
 
-const categories = [
-  "All",
-  "Computer Science",
-  "Programming",
-  "Business",
-  "Psychology",
-  "Finance",
-  "Design",
-  "Languages",
-  "Personal Development",
+const categoryDefs = [
+  { value: "All", key: "popular.category.all" },
+  { value: "Computer Science", key: "category.development" },
+  { value: "Programming", key: "category.development" },
+  { value: "Business", key: "category.business" },
+  { value: "Psychology", key: "popular.category.psychology" },
+  { value: "Finance", key: "category.finance" },
+  { value: "Design", key: "category.design" },
+  { value: "Languages", key: "popular.category.languages" },
+  { value: "Personal Development", key: "popular.category.all" },
 ];
 
-const levels = ["All Levels", "Beginner", "Intermediate", "Advanced"];
+const levelDefs = [
+  { value: "All Levels", key: "courses.level.all" },
+  { value: "Beginner", key: "courses.level.beginner" },
+  { value: "Intermediate", key: "courses.level.intermediate" },
+  { value: "Advanced", key: "courses.level.advanced" },
+];
 
 const Courses = () => {
+  const { t } = useLanguage();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -142,13 +148,13 @@ const Courses = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2 text-red-500">Error loading courses</h2>
+          <h2 className="text-xl font-semibold mb-2 text-red-500">{t('courses.error.title')}</h2>
           <p className="text-muted-foreground">{error}</p>
           <button
             onClick={fetchCourses}
             className="mt-4 px-4 py-2 bg-fidel-500 text-white rounded-lg hover:bg-fidel-600 transition-colors"
           >
-            Retry
+            {t('courses.error.retry')}
           </button>
         </div>
       </div>
@@ -167,7 +173,7 @@ const Courses = () => {
               transition={{ duration: 0.5 }}
               className="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white"
             >
-              Explore Our Courses
+              {t('courses.title')}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -175,8 +181,7 @@ const Courses = () => {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="text-muted-foreground max-w-2xl"
             >
-              Browse our extensive catalog of courses across various disciplines.
-              Find the perfect course to advance your knowledge and skills.
+              {t('courses.subtitle')}
             </motion.p>
           </div>
 
@@ -188,7 +193,7 @@ const Courses = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search for courses or instructors..."
+                placeholder={t('courses.searchPlaceholder')}
                 className="glass-input pl-10 pr-4 py-2 w-full"
               />
             </div>
@@ -200,12 +205,12 @@ const Courses = () => {
                   className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium"
                 >
                   <Filter size={16} />
-                  Filters
+                  {t('courses.filters')}
                 </button>
 
                 {selectedCategory !== "All" && (
                   <div className="px-3 py-1 bg-fidel-50 dark:bg-fidel-900/30 text-fidel-600 dark:text-fidel-400 rounded-full text-sm flex items-center gap-1">
-                    {selectedCategory}
+                    {t(categoryDefs.find(c => c.value === selectedCategory)?.key || 'popular.category.all')}
                     <button
                       onClick={() => setSelectedCategory("All")}
                       className="ml-1 hover:text-fidel-800 dark:hover:text-fidel-300"
@@ -217,7 +222,7 @@ const Courses = () => {
 
                 {selectedLevel !== "All Levels" && (
                   <div className="px-3 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full text-sm flex items-center gap-1">
-                    {selectedLevel}
+                    {t(levelDefs.find(l => l.value === selectedLevel)?.key || 'courses.level.all')}
                     <button
                       onClick={() => setSelectedLevel("All Levels")}
                       className="ml-1 hover:text-purple-800 dark:hover:text-purple-300"
@@ -229,16 +234,16 @@ const Courses = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Sort by:</span>
+                <span className="text-sm text-muted-foreground">{t('courses.sortBy')}</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="glass-input px-3 py-1 text-sm rounded-lg"
                 >
-                  <option value="popular">Popularity</option>
-                  <option value="rating">Rating</option>
-                  <option value="title">Title</option>
-                  <option value="price">Price</option>
+                  <option value="popular">{t('courses.sort.popularity')}</option>
+                  <option value="rating">{t('courses.sort.rating')}</option>
+                  <option value="title">{t('courses.sort.title')}</option>
+                  <option value="price">{t('courses.sort.price')}</option>
                 </select>
                 <button
                   onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
@@ -259,36 +264,36 @@ const Courses = () => {
                 className="glass-card p-4 mt-2 grid grid-cols-1 md:grid-cols-2 gap-6"
               >
                 <div>
-                  <h3 className="font-medium mb-3 text-slate-900 dark:text-white">Categories</h3>
+                  <h3 className="font-medium mb-3 text-slate-900 dark:text-white">{t('courses.categories')}</h3>
                   <div className="space-y-2">
-                    {categories.map((category) => (
-                      <label key={category} className="flex items-center cursor-pointer">
+                    {categoryDefs.map((category) => (
+                      <label key={category.value} className="flex items-center cursor-pointer">
                         <input
                           type="radio"
                           name="category"
-                          checked={selectedCategory === category}
-                          onChange={() => setSelectedCategory(category)}
+                          checked={selectedCategory === category.value}
+                          onChange={() => setSelectedCategory(category.value)}
                           className="mr-2 accent-fidel-500"
                         />
-                        <span className="text-sm text-slate-700 dark:text-slate-300">{category}</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{t(category.key)}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-medium mb-3 text-slate-900 dark:text-white">Level</h3>
+                  <h3 className="font-medium mb-3 text-slate-900 dark:text-white">{t('courses.level')}</h3>
                   <div className="space-y-2">
-                    {levels.map((level) => (
-                      <label key={level} className="flex items-center cursor-pointer">
+                    {levelDefs.map((level) => (
+                      <label key={level.value} className="flex items-center cursor-pointer">
                         <input
                           type="radio"
                           name="level"
-                          checked={selectedLevel === level}
-                          onChange={() => setSelectedLevel(level)}
+                          checked={selectedLevel === level.value}
+                          onChange={() => setSelectedLevel(level.value)}
                           className="mr-2 accent-fidel-500"
                         />
-                        <span className="text-sm text-slate-700 dark:text-slate-300">{level}</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{t(level.key)}</span>
                       </label>
                     ))}
                   </div>
@@ -322,9 +327,9 @@ const Courses = () => {
                 <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
                   <Search size={32} className="text-slate-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">No courses found</h3>
+                <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">{t('courses.empty.title')}</h3>
                 <p className="text-muted-foreground">
-                  Try adjusting your search or filter criteria
+                  {t('courses.empty.desc')}
                 </p>
               </div>
             )}
@@ -359,9 +364,6 @@ const Courses = () => {
         </div>
       </main>
 
-      <div className="fixed bottom-6 right-6 z-50">
-        <ThemeToggle />
-      </div>
     </div>
   );
 };

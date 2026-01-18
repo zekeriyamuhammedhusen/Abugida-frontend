@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLanguage } from "@/context/LanguageContext";
 
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -59,6 +60,7 @@ const Signup = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
    const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -185,10 +187,10 @@ const Signup = () => {
             className="text-center"
           >
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-5">
-              Create an account
+              {t("signup.title")}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Join us to start your learning journey
+              {t("signup.subtitle")}
             </p>
           </motion.div>
 
@@ -202,7 +204,7 @@ const Signup = () => {
               {/* Name Field */}
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Full Name
+                  {t("signup.fullName")}
                 </label>
                 <div className="relative">
                   <Input
@@ -210,7 +212,7 @@ const Signup = () => {
                     type="text"
                     {...form.register("name")}
                     className="glass-input pl-10"
-                    placeholder="John Doe"
+                    placeholder={t("signup.placeholder.name")}
                   />
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
                 </div>
@@ -224,7 +226,7 @@ const Signup = () => {
               {/* Email Field */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Email Address
+                  {t("signup.email")}
                 </label>
                 <div className="relative">
                   <Input
@@ -232,7 +234,7 @@ const Signup = () => {
                     type="email"
                     {...form.register("email")}
                     className="glass-input pl-10"
-                    placeholder="your.email@example.com"
+                    placeholder={t("signup.placeholder.email")}
                   />
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
                 </div>
@@ -246,7 +248,7 @@ const Signup = () => {
               {/* Phone Field */}
               <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Phone Number (Optional)
+                  {t("signup.phone")}
                 </label>
                 <div className="relative">
                   <Input
@@ -254,7 +256,7 @@ const Signup = () => {
                     type="tel"
                     {...form.register("phone")}
                     className="glass-input pl-10"
-                    placeholder="+1 (123) 456-7890"
+                    placeholder={t("signup.placeholder.phone")}
                   />
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
                 </div>
@@ -263,18 +265,18 @@ const Signup = () => {
               {/* Role Selection */}
               <div>
                 <label htmlFor="role" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Join As
+                  {t("signup.joinAs")}
                 </label>
                 <Select
                   value={form.watch("role")}
                   onValueChange={handleRoleChange}
                 >
                   <SelectTrigger className="glass-input">
-                    <SelectValue placeholder="Select your role" />
+                    <SelectValue placeholder={t("signup.joinAs")} />
                   </SelectTrigger>
                   <SelectContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="instructor">Instructor</SelectItem>
+                    <SelectItem value="student">{t("signup.role.student")}</SelectItem>
+                    <SelectItem value="instructor">{t("signup.role.instructor")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -285,14 +287,14 @@ const Signup = () => {
                   {/* Expertise Field */}
                   <div>
                     <label htmlFor="expertise" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Expertise
+                      {t("signup.expertise")}
                     </label>
                     <div className="relative">
                       <Textarea
                         id="expertise"
                         {...form.register("expertise")}
                         className="glass-input pl-10"
-                        placeholder="Your areas of expertise"
+                        placeholder={t("signup.placeholder.expertise")}
                       />
                       <BookOpen className="absolute left-3 top-3 text-muted-foreground" size={18} />
                     </div>
@@ -306,7 +308,7 @@ const Signup = () => {
                   {/* CV Upload Field */}
                   <div>
                     <label htmlFor="cv" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      CV (PDF only, max 5MB)
+                      {t("signup.cvLabel")}
                     </label>
                     <div className="relative">
                       <label
@@ -316,11 +318,11 @@ const Signup = () => {
                         <div className="flex items-center">
                           <Upload className="w-5 h-5 mr-2 text-muted-foreground" />
                           <span className="text-sm">
-                            {cvFile ? cvFile.name : "Click to upload your CV"}
+                            {cvFile ? cvFile.name : t("signup.cvPlaceholder")}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                          Only PDF files are allowed
+                          {t("signup.cvHint")}
                         </p>
                       </label>
                       <input
@@ -339,7 +341,7 @@ const Signup = () => {
               {/* Password Field */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Password
+                  {t("signup.password")}
                 </label>
                 <div className="relative">
                   <Input
@@ -354,7 +356,7 @@ const Signup = () => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-slate-900 dark:hover:text-white"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -369,7 +371,7 @@ const Signup = () => {
               {/* Confirm Password Field */}
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Confirm Password
+                  {t("signup.confirmPassword")}
                 </label>
                 <div className="relative">
                   <Input
@@ -384,7 +386,7 @@ const Signup = () => {
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-slate-900 dark:hover:text-white"
-                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    aria-label={showConfirmPassword ? t("login.hidePassword") : t("login.showPassword")}
                   >
                     {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -406,10 +408,10 @@ const Signup = () => {
                   {isSubmitting ? (
                     <span className="flex items-center">
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
+                      {t("signup.submitting")}
                     </span>
                   ) : (
-                    "Create Account"
+                    t("signup.submit")
                   )}
                 </Button>
               </div>
@@ -423,12 +425,12 @@ const Signup = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-center text-sm text-muted-foreground"
           >
-            Already have an account?{" "}
+            {t("signup.loginCta")} {" "}
             <Link
               to="/login"
               className="text-abugida-600 hover:text-abugida-500 font-medium"
             >
-              Sign in
+              {t("signup.loginLink")}
             </Link>
           </motion.p>
         </div>

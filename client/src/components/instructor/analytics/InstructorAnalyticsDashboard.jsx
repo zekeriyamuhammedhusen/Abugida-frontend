@@ -1,80 +1,20 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import StudentEnrollmentsPerCourse from "./StudentEnrollmentsPerCourse";
 import StudentProgressCompletion from "./StudentProgressCompletion";
 import CourseRatingsFeedback from "./CourseRatingsFeedback";
 import CourseEarnings from "./CourseEarnings";
 
+const timeRanges = [
+  { label: "Week", value: "7d" },
+  { label: "Month", value: "30d" },
+  { label: "Quarter", value: "90d" },
+  { label: "Year", value: "ytd" },
+];
+
 const InstructorAnalyticsDashboard = () => {
-  const [selectedTimeRange, setSelectedTimeRange] = useState("Month");
+  const [selectedTimeRange, setSelectedTimeRange] = useState("30d");
   const [paymentMethod, setPaymentMethod] = useState("chapa");
-
-  // Sample data
-  const studentData = [
-    { name: "Web Development", value: 35 },
-    { name: "Data Science", value: 25 },
-    { name: "Design", value: 20 },
-    { name: "Business", value: 15 },
-    { name: "Marketing", value: 5 },
-  ];
-
-  const completionData = [
-    { month: "Jan", value: 120 },
-    { month: "Feb", value: 125 },
-    { month: "Mar", value: 135 },
-    { month: "Apr", value: 142 },
-    { month: "May", value: 156 },
-    { month: "Jun", value: 170 },
-  ];
-
-  const ratingData = [
-    { course: "Web Development", rating: 4.8 },
-    { course: "Data Science", rating: 4.5 },
-    { course: "Design", rating: 4.7 },
-    { course: "Business", rating: 4.3 },
-    { course: "Marketing", rating: 4.6 },
-  ];
-
-  const earningsData = [
-    { month: "Jan", value: 1200 },
-    { month: "Feb", value: 1350 },
-    { month: "Mar", value: 1480 },
-    { month: "Apr", value: 1650 },
-    { month: "May", value: 1820 },
-    { month: "Jun", value: 2100 },
-  ];
-
-  const feedbackData = [
-    {
-      student: "Kidus Abebe",
-      course: "Web Development",
-      rating: 5,
-      comment: "ጥሩ ትምህርት፣ በጣም ረድቶኛል።",
-      date: "2 days ago",
-    },
-    {
-      student: "Hana Bekele",
-      course: "Data Science",
-      rating: 4,
-      comment:
-        "Very informative course, but could use more practical examples.",
-      date: "1 week ago",
-    },
-    {
-      student: "Dawit Mekonnen",
-      course: "Design",
-      rating: 5,
-      comment: "Excellent course structure and content!",
-      date: "3 days ago",
-    },
-  ];
 
   return (
     <div className="space-y-6">
@@ -94,37 +34,27 @@ const InstructorAnalyticsDashboard = () => {
               </SelectContent>
             </Select> */}
 
-            {/* <div className="flex space-x-2">
-              {["Week", "Month", "Quarter", "Year"].map((range) => (
+            <div className="flex space-x-2">
+              {timeRanges.map((range) => (
                 <Button
-                  key={range}
-                  variant={selectedTimeRange === range ? "default" : "outline"}
+                  key={range.value}
+                  variant={selectedTimeRange === range.value ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedTimeRange(range)}
+                  onClick={() => setSelectedTimeRange(range.value)}
                 >
-                  {range}
+                  {range.label}
                 </Button>
               ))}
-            </div> */}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <StudentEnrollmentsPerCourse
-          data={studentData}
-          timeRange={selectedTimeRange}
-        />
-        <StudentProgressCompletion
-          data={completionData}
-          timeRange={selectedTimeRange}
-        />
-        <CourseRatingsFeedback
-          ratingData={ratingData}
-          feedbackData={feedbackData}
-        />
+        <StudentEnrollmentsPerCourse timeRange={selectedTimeRange} />
+        <StudentProgressCompletion timeRange={selectedTimeRange} />
+        <CourseRatingsFeedback />
         <CourseEarnings
-          data={earningsData}
           paymentMethod={paymentMethod}
           timeRange={selectedTimeRange}
         />

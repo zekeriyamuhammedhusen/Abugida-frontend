@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Clock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 import { Progress } from "@/components/ui/progress";
 
 const PendingApproval = () => {
@@ -65,9 +64,6 @@ const PendingApproval = () => {
         </div>
       </div>
       
-      <div className="fixed bottom-6 right-6 z-50">
-        <ThemeToggle />
-      </div>
     </div>
   );
 };

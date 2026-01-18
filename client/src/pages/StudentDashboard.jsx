@@ -18,6 +18,7 @@ import Logo from "../components/layout/Logo";
 import { useAuth } from "../context/AuthContext";
 import PlatformSettings from "../components/admin/PlatformSettings";
 import api from "@/lib/api";
+import { useLanguage } from "@/context/LanguageContext";
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -29,13 +30,14 @@ const StudentDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const navItems = [
-    { id: "overview", label: "Overview", icon: LayoutDashboard },
-    { id: "courses", label: "My Courses", icon: Book },
-    { id: "messages", label: "Messages", icon: MessageSquare },
-    { id: "instructors", label: "Instructors", icon: Users },
-    { id: "settings", label: "Settings", icon: Settings },
+    { id: "overview", label: t("student.nav.overview"), icon: LayoutDashboard },
+    { id: "courses", label: t("student.nav.courses"), icon: Book },
+    { id: "messages", label: t("student.nav.messages"), icon: MessageSquare },
+    { id: "instructors", label: t("student.nav.instructors"), icon: Users },
+    { id: "settings", label: t("student.nav.settings"), icon: Settings },
   ];
 
   // Handle URL tab parameter on load
@@ -117,17 +119,17 @@ const StudentDashboard = () => {
   const getActiveTabTitle = () => {
     switch (activeTab) {
       case "overview":
-        return "Dashboard Overview";
+        return t("student.header.overview");
       case "courses":
-        return "My Courses";
+        return t("student.header.courses");
       case "messages":
-        return "Messages";
+        return t("student.header.messages");
       case "instructors":
-        return "Instructors";
+        return t("student.header.instructors");
       case "settings":
-        return "Platform Settings";
+        return t("student.header.settings");
       default:
-        return "Dashboard";
+        return t("student.header.overview");
     }
   };
 
@@ -173,10 +175,10 @@ const StudentDashboard = () => {
             </div>
             <div className="overflow-hidden">
               <div className="text-sm font-medium truncate">
-                {user?.name || "Student Name"}
+                {user?.name || t("student.sidebar.namePlaceholder")}
               </div>
               <div className="text-xs text-muted-foreground truncate">
-                {user?.email || "student@example.com"}
+                {user?.email || t("student.sidebar.emailPlaceholder")}
               </div>
             </div>
           </div>

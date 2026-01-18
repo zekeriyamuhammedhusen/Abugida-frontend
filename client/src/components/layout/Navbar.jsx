@@ -1,4 +1,7 @@
 import { useAuth } from "../../context/AuthContext"; // Assuming you have a context for user authentication
+import { useLanguage } from "../../context/LanguageContext";
+import ukFlag from "../../assets/flags/uk.png";
+import ethFlag from "../../assets/flags/eth.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import cn from "classnames"; // Utility for conditional class names
@@ -6,8 +9,11 @@ import { Grid, LogOut, Menu, X } from "react-feather"; // Corrected to use Grid 
 import { Button } from "../ui/button"; // Assuming Button component is available
 import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"; // Assuming DropdownMenu component is available
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import ThemeToggle from "../ui/ThemeToggle";
 const Navbar = () => {
   const { user, logout, loading } = useAuth();  // Get user state from AuthContext
+  const { language, setLanguage, t } = useLanguage();
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
@@ -15,10 +21,15 @@ const Navbar = () => {
 
   // Sample navigation links
   const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Courses", href: "/courses" },
-    { name: "About", href: "/about" },
-    { name: "Contact", href: "/contact" },
+    { name: t("nav.home"), href: "/" },
+    { name: t("nav.courses"), href: "/courses" },
+    { name: t("nav.about"), href: "/about" },
+    { name: t("nav.contact"), href: "/contact" },
+  ];
+
+  const languageOptions = [
+    { code: "en", label: t("english"), flag: ukFlag },
+    { code: "am", label: t("amharic"), flag: ethFlag },
   ];
 
   useEffect(() => {
@@ -117,19 +128,67 @@ const Navbar = () => {
               )}
             >
               <Grid className="w-4 h-4 mr-2" /> {/* Changed to Grid */}
-              Dashboard
+              {t("nav.dashboard")}
             </Link>
           )}
         </nav>
 
         <div className="hidden md:flex items-center space-x-4">
+          <ThemeToggle />
+
+          {/* Language Switcher */}
+          <div className="relative">
+            <button
+              onClick={() => setLanguageMenuOpen((o) => !o)}
+              className="flex items-center gap-2 px-3 py-2 rounded-md border dark:border-slate-700 text-sm bg-white dark:bg-slate-900"
+              aria-haspopup="listbox"
+              aria-expanded={languageMenuOpen}
+            >
+              {(() => {
+                const current = languageOptions.find((o) => o.code === language) || languageOptions[0];
+                return (
+                  <>
+                    <img src={current.flag} alt="flag" className="w-4 h-4 object-contain" />
+                    <span>{current.label}</span>
+                  </>
+                );
+              })()}
+            </button>
+            {languageMenuOpen && (
+              <div className="absolute right-0 mt-2 w-40 rounded-md border dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg z-50">
+                <ul role="listbox" className="py-1">
+                  {languageOptions.map((opt) => (
+                    <li key={opt.code}>
+                      <button
+                        onClick={() => {
+                          setLanguage(opt.code);
+                          setLanguageMenuOpen(false);
+                        }}
+                        className={cn(
+                          "w-full px-3 py-2 flex items-center gap-2 text-sm text-left",
+                          language === opt.code
+                            ? "bg-slate-100 dark:bg-slate-800 font-medium"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800"
+                        )}
+                        role="option"
+                        aria-selected={language === opt.code}
+                      >
+                        <img src={opt.flag} alt="flag" className="w-4 h-4 object-contain" />
+                        <span>{opt.label}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
           {user ? (
             <div className="flex items-center space-x-4">
               {/* Display username */}
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 {user.name}
               </span>
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -162,7 +221,7 @@ const Navbar = () => {
                       className="cursor-pointer w-full flex items-center"
                     >
                       <Grid className="mr-2 h-4 w-4" /> {/* Changed to Grid */}
-                      <span>Dashboard</span>
+                      <span>{t("nav.dashboard")}</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -171,7 +230,7 @@ const Navbar = () => {
                     className="cursor-pointer text-red-500 focus:text-red-500"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
+                    <span>{t("nav.logout")}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -180,7 +239,7 @@ const Navbar = () => {
             <>
               <Link to="/login">
                 <Button variant="ghost" size="sm">
-                  Log in
+                  {t("nav.login")}
                 </Button>
               </Link>
               <Link to="/signup">
@@ -188,7 +247,7 @@ const Navbar = () => {
                   className="bg-abugida-500 hover:bg-abugida-600 text-white shadow-sm hover:shadow-md transition-all duration-200"
                   size="sm"
                 >
-                  Sign up
+                  {t("nav.signup")}
                 </Button>
               </Link>
             </>
@@ -242,10 +301,33 @@ const Navbar = () => {
             )}
           >
             <Grid className="w-4 h-4 mr-2" />
-            Dashboard
+            {t("nav.dashboard")}
           </Link>
         )}
       </nav>
+
+      {/* Mobile Language Switcher */}
+      <div className="mt-2">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          {t("language")}
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {languageOptions.map((opt) => (
+            <button
+              key={opt.code}
+              onClick={() => { setLanguage(opt.code); setMobileMenuOpen(false); }}
+              className={cn(
+                "px-3 py-2 rounded-md text-sm border dark:border-slate-700 flex items-center justify-center gap-2",
+                language === opt.code ? "bg-slate-100 dark:bg-slate-800" : "bg-transparent"
+              )}
+              aria-label={`Switch to ${opt.label}`}
+            >
+              <img src={opt.flag} alt="flag" className="w-4 h-4 object-contain" />
+              <span>{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Mobile Logout Button */}
       {user ? (
@@ -256,7 +338,7 @@ const Navbar = () => {
           onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          Log out
+          {t("nav.logout")}
         </Button>
       ) : (
         <>
@@ -266,7 +348,7 @@ const Navbar = () => {
       className="w-full px-4 py-2 bg-fidel-500 hover:bg-fidel-600 text-white shadow-sm hover:shadow-md transition-all duration-200 rounded-md"
       size="sm"
     >
-      Log in
+      {t("nav.login")}
     </Button>
   </Link>
   <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
@@ -274,7 +356,7 @@ const Navbar = () => {
       className="w-full px-4 py-2 bg-fidel-500 hover:bg-fidel-600 text-white shadow-sm hover:shadow-md transition-all duration-200 rounded-md"
       size="sm"
     >
-      Sign up
+      {t("nav.signup")}
     </Button>
   </Link>
 </div>

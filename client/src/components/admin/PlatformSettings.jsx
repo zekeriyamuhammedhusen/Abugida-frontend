@@ -13,8 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import api from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 const PlatformSettings = () => {
+  const { refreshUser } = useAuth();
   const [user, setUser] = useState({
     profilePic: "",
     name: "",
@@ -30,6 +32,7 @@ const PlatformSettings = () => {
     confirmPassword: "",
   });
   const [avatarPreview, setAvatarPreview] = useState(user.profilePic);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
 
@@ -91,17 +94,14 @@ const PlatformSettings = () => {
     }
 
     setIsAvatarLoading(true);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result);
-      setIsAvatarLoading(false);
-    };
-    reader.readAsDataURL(file);
+    setSelectedAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setIsAvatarLoading(false);
   };
 
   const handleRemoveAvatar = () => {
     setAvatarPreview("");
+    setSelectedAvatarFile(null);
   };
 
   const handleProfileUpdate = async (e) => {
@@ -113,17 +113,16 @@ const PlatformSettings = () => {
     formDataToSend.append("email", formData.email);
     formDataToSend.append("bio", formData.bio);
 
-    if (avatarPreview && avatarPreview !== user.profilePic) {
-      // Convert data URL to Blob for file upload
-      const blob = await (await fetch(avatarPreview)).blob();
-      formDataToSend.append("profilePic", blob, "avatar.jpg");
-      console.log("User profile pic:", user.profilePic);
-
+    if (selectedAvatarFile) {
+      formDataToSend.append("profilePic", selectedAvatarFile, selectedAvatarFile.name || "avatar.jpg");
     }
 
     try {
       // Let axios set multipart boundaries automatically
       const response = await api.put(`/api/users/profile`, formDataToSend);
+
+      // Refresh auth user so name/avatar updates across the app
+      await refreshUser();
 
       setIsLoading(false);
       toast.success("Profile updated successfully!");
