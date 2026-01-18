@@ -27,6 +27,7 @@ import certificateRoutes from "./routes/certificateRoutes/certificateRoutes.js";
 import paymentRoutes from "./routes/PaymentRoutes/paymentRoutes.js";
 import adminGraphRoutes from "./routes/admin-Routes/graphs.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import translationRoutes from "./routes/translationRoutes.js";
 import { fileURLToPath } from "url";
 
 
@@ -171,6 +172,7 @@ app.use("/api/admin/graphs", adminGraphRoutes);
 
 app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
 app.use("/api/chat", chatRoutes);
+app.use("/api/translate", translationRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

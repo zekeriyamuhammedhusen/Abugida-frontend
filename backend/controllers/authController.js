@@ -5,8 +5,10 @@ import { sendEmail } from '../Email Service/emailService.js';
 dotenv.config();
 
 // Helper: create JWT token
+// Tokens expire in 2 hours to enforce re-authentication
+const TOKEN_EXPIRY_MS = 2 * 60 * 60 * 1000; // 2 hours
 const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: TOKEN_EXPIRY_MS / 1000 });
 };
 
 // REGISTER
@@ -29,6 +31,7 @@ export const registerUser = async (req, res) => {
       expertise: role === 'instructor' ? expertise : null,
       cv: role === 'instructor' ? req.file?.path : null,
       password,
+      isVerified: false, // enforce OTP verification for all new accounts
     });
 
     await user.save();
@@ -86,7 +89,7 @@ export const loginUser = async (req, res) => {
       httpOnly: true,
       secure: isProd, // must be true for SameSite=None in modern browsers
       sameSite: isProd ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: TOKEN_EXPIRY_MS, // 2 hours
     };
 
     res.cookie('token', token, cookieOptions);

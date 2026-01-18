@@ -37,7 +37,8 @@ const userSchema = new mongoose.Schema({
   },
   otp: { type: String },
   otpExpiration: { type: Date },
-  isVerified: { type: Boolean, default: true },
+  // New users must verify via OTP; set false by default
+  isVerified: { type: Boolean, default: false },
   passwordResetOtp: { type: String },
 passwordResetOtpExpiration: { type: Date },
 

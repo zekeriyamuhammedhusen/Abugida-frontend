@@ -478,23 +478,23 @@ export const getCourseAverageProgress = async (req, res) => {
 
     // Find all enrollments for the course
     const enrollments = await Enrollment.find({ courseId }).select("studentId");
+    const studentIds = enrollments.map((enrollment) => enrollment.studentId?.toString());
+    const uniqueStudentIds = [...new Set(studentIds.filter(Boolean))];
 
-    if (!enrollments.length) {
+    if (!uniqueStudentIds.length) {
       return res.json({
         courseId,
         courseTitle: course.title,
         averageProgress: 0,
         studentCount: 0,
+        studentIds: [],
       });
     }
-
-    // Get student IDs from enrollments
-    const studentIds = enrollments.map((enrollment) => enrollment.studentId);
 
     // Fetch progress for all students in the course
     const progressRecords = await Progress.find({
       courseId,
-      studentId: { $in: studentIds },
+      studentId: { $in: uniqueStudentIds },
     }).select("progressPercentage");
 
     if (!progressRecords.length) {
@@ -502,7 +502,8 @@ export const getCourseAverageProgress = async (req, res) => {
         courseId,
         courseTitle: course.title,
         averageProgress: 0,
-        studentCount: enrollments.length,
+        studentCount: uniqueStudentIds.length,
+        studentIds: uniqueStudentIds,
       });
     }
 
@@ -519,7 +520,8 @@ export const getCourseAverageProgress = async (req, res) => {
       courseId,
       courseTitle: course.title,
       averageProgress,
-      studentCount: enrollments.length,
+      studentCount: uniqueStudentIds.length,
+      studentIds: uniqueStudentIds,
     });
   } catch (error) {
     console.error("Error fetching course average progress:", error);

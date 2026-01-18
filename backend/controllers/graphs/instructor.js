@@ -2,18 +2,52 @@ import Enrollment from '../../models/Enrollment.js';
 import Course from '../../models/Course.js';
 import Progress from '../../models/Progress.js';
 
+// Convert a simple range token into a start date
+function resolveDateRange(range) {
+  const now = new Date();
+  if (!range) return null;
+
+  const mapping = {
+    '7d': 7,
+    '30d': 30,
+    '90d': 90,
+    week: 7,
+    month: 30,
+    quarter: 90,
+  };
+
+  if (range === 'ytd' || range === 'year') {
+    return new Date(now.getFullYear(), 0, 1);
+  }
+
+  const days = mapping[range];
+  if (!days) return null;
+
+  const start = new Date();
+  start.setDate(now.getDate() - days);
+  return start;
+}
+
 export const getInstructorEnrollmentsPerCourse = async (req, res) => {
   try {
     const instructorId = req.user._id;
-    const courses = await Course.find({ instructor: instructorId }).select('_id title');
+    const { range } = req.query;
+
+    const startDate = resolveDateRange(range);
+
+    const courses = await Course.find({ instructor: instructorId }).select('_id title category');
 
     const data = await Promise.all(
-      courses.map(async course => {
-        const count = await Enrollment.countDocuments({ courseId: course._id });
+      courses.map(async (course) => {
+        const match = { courseId: course._id };
+        if (startDate) match.enrolledAt = { $gte: startDate };
+
+        const count = await Enrollment.countDocuments(match);
         return {
           courseId: course._id,
           courseTitle: course.title,
-          enrollments: count
+          category: course.category || 'other',
+          enrollments: count,
         };
       })
     );
@@ -28,7 +62,28 @@ export const getInstructorEnrollmentsPerCourse = async (req, res) => {
 
 export const getStudentProgressCompletion = async (req, res) => {
   try {
-    const progresses = await Progress.find();
+    const instructorId = req.user._id;
+    const { timeRange } = req.query;
+    const startDate = resolveDateRange(timeRange);
+
+    // Only consider progress for this instructor's courses
+    const instructorCourses = await Course.find({ instructor: instructorId }).select('_id');
+    const courseIds = instructorCourses.map((c) => c._id);
+
+    if (!courseIds.length) {
+      return res.status(200).json([
+        { name: 'Completed', value: 0, count: 0 },
+        { name: 'In Progress', value: 0, count: 0 },
+        { name: 'Not Started', value: 0, count: 0 },
+      ]);
+    }
+
+    const match = { courseId: { $in: courseIds } };
+    if (startDate) {
+      match.updatedAt = { $gte: startDate };
+    }
+
+    const progresses = await Progress.find(match).select('progressPercentage');
 
     let completed = 0;
     let inProgress = 0;
