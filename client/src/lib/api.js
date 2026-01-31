@@ -11,4 +11,29 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Global response interceptor: enforce logout on auth expiry without redirect loops
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    if (status === 401 || status === 403) {
+      // Clear client-side session timers/markers
+      try {
+        localStorage.removeItem('auth.loginAt');
+        localStorage.removeItem('auth.expiresAt');
+      } catch {}
+
+      // Avoid hard refresh loops when already on an auth page
+      if (typeof window !== 'undefined') {
+        const path = window.location?.pathname || '';
+        const authPaths = ['/login', '/signup', '/register'];
+        if (!authPaths.includes(path)) {
+          window.location.assign('/login');
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

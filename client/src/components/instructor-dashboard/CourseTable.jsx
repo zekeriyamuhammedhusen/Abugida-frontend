@@ -9,21 +9,23 @@ import {
 } from "@/components/ui/table";
 import { ChevronRight, Plus } from "lucide-react";
 import { Edit, Trash2, Eye } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, showActions = false, onEdit, onDelete }) => {
+  const { t } = useLanguage();
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold">Your Courses</h3>
+        <h3 className="font-semibold">{t("instructor.courses.title") || "Your Courses"}</h3>
         {onViewAll && (
           <Button variant="ghost" size="sm" onClick={onViewAll}>
-            View All Courses
+            {t("instructor.courses.viewAll") || "View All Courses"}
           </Button>
         )}
         {onCreate && (
           <Button onClick={onCreate} className="w-full md:w-auto">
             <Plus size={16} className="mr-2" />
-            Create New Course
+            {t("instructor.sidebar.createCourse")}
           </Button>
         )}
       </div>
@@ -31,14 +33,14 @@ const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, sh
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Course</TableHead>
-              <TableHead className="hidden sm:table-cell">Students</TableHead>
-              <TableHead>Progress</TableHead>
-              <TableHead className="hidden md:table-cell">Last Updated</TableHead>
+              <TableHead>{t("instructor.courses.course") || "Course"}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t("instructor.common.students") || "Students"}</TableHead>
+              <TableHead>{t("instructor.courses.progress") || "Progress"}</TableHead>
+              <TableHead className="hidden md:table-cell">{t("instructor.courses.lastUpdated") || "Last Updated"}</TableHead>
               {showStatus && (
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("instructor.courses.status") || "Status"}</TableHead>
               )}
-              {(showActions || !onViewAll) && <TableHead>Actions</TableHead>}
+              {(showActions || !onViewAll) && <TableHead>{t("instructor.courses.actions") || "Actions"}</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -73,7 +75,7 @@ const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, sh
                   {showStatus && (
                     <TableCell className="hidden sm:table-cell">
                       <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs">
-                        Published
+                        {t("instructor.courses.published") || "Published"}
                       </span>
                     </TableCell>
                   )}
@@ -81,20 +83,24 @@ const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, sh
                     <TableCell>
                       {showActions ? (
                         <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onDelete && onDelete(course._id || course.id)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onEdit && onEdit(course._id || course.id)}
-                          >
-                            <Edit size={16} />
-                          </Button>
+                          {onDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onDelete(course._id || course.id)}
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          )}
+                          {onEdit && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onEdit(course._id || course.id)}
+                            >
+                              <Edit size={16} />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -115,7 +121,7 @@ const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, sh
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-6">
-                  No courses found.
+                  {t("instructor.courses.empty") || "No courses found."}
                 </TableCell>
               </TableRow>
             )}

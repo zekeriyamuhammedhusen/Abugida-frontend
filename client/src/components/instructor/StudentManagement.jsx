@@ -137,11 +137,8 @@ const StudentManagement = () => {
     <Card className="shadow-lg border-0 bg-white dark:bg-slate-900">
       <CardHeader className="border-b bg-gradient-to-r from-fidel-500 to-fidel-600 text-white">
         <CardTitle className="text-2xl">Student Management</CardTitle>
-        <CardDescription className="text-slate-100">
-          Monitor and manage your students' progress
-        </CardDescription>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="px-4 py-2">
         {selectedStudent ? (
           <StudentDetails
             selectedStudent={selectedStudent}
@@ -150,7 +147,7 @@ const StudentManagement = () => {
           />
         ) : (
           <>
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-0 gap-2">
               <div className="relative">
                 <Search
                   size={16}

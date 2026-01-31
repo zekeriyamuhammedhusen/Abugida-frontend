@@ -11,6 +11,7 @@ import CourseDetails from "./pages/CourseDetails";
 import StudentDashboard from "./pages/StudentDashboard";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import ApproverDashboard from "./pages/ApproverDashboard";
 import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -24,6 +25,7 @@ import {
   disconnectSocket,
 } from "./socket";
 import RequireAdmin from "./components/auth/RequireAdmin";
+import RequireApprover from "./components/auth/RequireApprover";
 import ForgotPassword from "./pages/ForgotPassword";
 import OTPVerification from "./pages/OTPVerification";
 import OTPSend from "./pages/OTPSend";
@@ -226,6 +228,14 @@ const App = () => {
             <RequireAdmin>
               <AdminDashboard />
             </RequireAdmin>
+          }
+        />
+        <Route
+          path="/approver-dashboard"
+          element={
+            <RequireApprover>
+              <ApproverDashboard />
+            </RequireApprover>
           }
         />
         <Route path="/profile" element={<Profile />} />

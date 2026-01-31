@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -35,14 +35,19 @@ import CourseEarnings from "./analytics/CourseEarnings";
 import CourseRatingsFeedback from "./analytics/CourseRatingsFeedback";
 import StudentProgressCompletion from "./analytics/StudentProgressCompletion";
 import StudentEnrollmentsPerCourse from "./analytics/StudentEnrollmentsPerCourse";
+import api from "@/lib/api";
+import { useLanguage } from "@/context/LanguageContext";
 
 const PlatformAnalytics = () => {
+  const { t } = useLanguage();
   const [timePeriod, setTimePeriod] = useState("30days");
   const [paymentMethod, setPaymentMethod] = useState("chapa");
   const [startDate, setStartDate] = useState(undefined);
   const [endDate, setEndDate] = useState(undefined);
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(null);
 
-  // Mock data for user growth
   const userGrowthData = [
     { name: "Jan", students: 120, instructors: 8 },
     { name: "Feb", students: 165, instructors: 12 },
@@ -52,41 +57,76 @@ const PlatformAnalytics = () => {
     { name: "Jun", students: 480, instructors: 30 },
   ];
 
-  // Mock data for platform statistics
+  const formatNumber = (val) =>
+    typeof val === "number" && Number.isFinite(val)
+      ? val.toLocaleString("en-US")
+      : "—";
+
+  const formatCurrency = (val) =>
+    typeof val === "number" && Number.isFinite(val)
+      ? `ETB ${val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : "ETB 0.00";
+
   const platformStats = [
     {
-      title: "Total Users",
-      value: "1,245",
+      titleKey: "admin.analytics.totalUsers",
+      value: formatNumber(stats?.totalUsers),
       icon: Users,
-      change: "+12.5%",
+      change: "",
       chart: "up",
       dataKey: "students",
     },
     {
-      title: "Total Instructors",
-      value: "36",
+      titleKey: "admin.analytics.totalStudents",
+      value: formatNumber(Number.isFinite(stats?.totalStudents) ? stats.totalStudents : 0),
+      icon: Users,
+      change: "",
+      chart: "up",
+      dataKey: "students",
+    },
+    {
+      titleKey: "admin.analytics.totalInstructors",
+      value: formatNumber(stats?.totalInstructors),
       icon: BookOpen,
-      change: "+4.3%",
+      change: "",
       chart: "up",
       dataKey: "instructors",
     },
     {
-      title: "Total Courses",
-      value: "89",
+      titleKey: "admin.analytics.totalCourses",
+      value: formatNumber(stats?.totalCourses),
       icon: Layers,
-      change: "+7.8%",
+      change: "",
       chart: "up",
       dataKey: "students",
     },
     {
-      title: "Total Revenue",
-      value: "ETB 240,000",
+      titleKey: "admin.analytics.totalRevenue",
+      value: formatCurrency(stats?.totalRevenue),
       icon: DollarSign,
-      change: "+18.2%",
+      change: "",
       chart: "up",
       dataKey: "students",
     },
   ];
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setStatsLoading(true);
+        setStatsError(null);
+        const res = await api.get("/api/admin/stats");
+        setStats(res.data);
+      } catch (err) {
+        console.error("Failed to load platform stats", err);
+        setStatsError(t("admin.analytics.statsError"));
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    loadStats();
+  }, []);
 
   const resetDateFilter = () => {
     setStartDate(undefined);
@@ -99,9 +139,9 @@ const PlatformAnalytics = () => {
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <CardTitle>Platform Analytics</CardTitle>
+              <CardTitle>{t("admin.analytics.title")}</CardTitle>
               <CardDescription>
-                Comprehensive insights into platform performance
+                {t("admin.analytics.subtitle")}
               </CardDescription>
             </div>
 
@@ -113,13 +153,13 @@ const PlatformAnalytics = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {platformStats.map((stat, index) => (
               <Card
-                key={stat.title}
+                key={stat.titleKey}
                 className="border-none shadow-sm hover:shadow-md transition-shadow duration-200"
               >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                      {stat.title}
+                      {t(stat.titleKey)}
                     </CardTitle>
                     <div className="p-2 rounded-lg bg-fidel-50 dark:bg-slate-800">
                       <stat.icon
@@ -131,15 +171,20 @@ const PlatformAnalytics = () => {
                 </CardHeader>
                 <CardContent>
                   <div>
-                    <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
-                    <div className="flex items-center gap-1 mt-1">
-                      <TrendingUp size={14} className="text-green-500" />
-                      <p className="text-xs text-green-500">
-                        {stat.change} vs previous period
-                      </p>
-                    </div>
+                    <h3 className="text-2xl font-bold mt-1">
+                      {statsLoading ? '—' : stat.value}
+                    </h3>
+                    {statsError ? (
+                      <p className="text-xs text-red-500 mt-1">{statsError}</p>
+                    ) : (
+                      <div className="flex items-center gap-1 mt-1">
+                        <TrendingUp size={14} className="text-green-500" />
+                        <p className="text-xs text-green-500">
+                          {stat.change || t("admin.analytics.liveData")}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  {/* Small Area Chart */}
                   <div className="mt-4 h-10">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart

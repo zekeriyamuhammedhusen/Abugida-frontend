@@ -8,6 +8,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Star } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const CourseRatingsFeedback = () => {
   const [ratingData, setRatingData] = useState([]);
@@ -15,21 +16,23 @@ const CourseRatingsFeedback = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const { t } = useLanguage();
+
   const timeAgo = (isoDate) => {
     const seconds = Math.floor((Date.now() - new Date(isoDate)) / 1000);
     const intervals = [
-      { label: "year", seconds: 31536000 },
-      { label: "month", seconds: 2592000 },
-      { label: "week", seconds: 604800 },
-      { label: "day", seconds: 86400 },
-      { label: "hour", seconds: 3600 },
-      { label: "minute", seconds: 60 },
+      { label: t("analytics.timeAgo.year"), seconds: 31536000 },
+      { label: t("analytics.timeAgo.month"), seconds: 2592000 },
+      { label: t("analytics.timeAgo.week"), seconds: 604800 },
+      { label: t("analytics.timeAgo.day"), seconds: 86400 },
+      { label: t("analytics.timeAgo.hour"), seconds: 3600 },
+      { label: t("analytics.timeAgo.minute"), seconds: 60 },
     ];
     for (const { label, seconds: s } of intervals) {
       const count = Math.floor(seconds / s);
-      if (count >= 1) return `${count} ${label}${count > 1 ? "s" : ""} ago`;
+      if (count >= 1) return `${count} ${label}${count > 1 ? (label === t("analytics.timeAgo.month") ? "s" : "") : ""} ${t("analytics.timeAgo.suffixAgo")}`;
     }
-    return "just now";
+    return t("analytics.timeAgo.justNow");
   };
 
   useEffect(() => {
@@ -81,15 +84,15 @@ const CourseRatingsFeedback = () => {
     );
   };
 
-  if (loading) return <div className="flex justify-center items-center h-64">Loading…</div>;
-  if (error) return <div className="flex justify-center items-center h-64 text-red-500">Error: {error}</div>;
+  if (loading) return <div className="flex justify-center items-center h-64">{t("analytics.common.loading")}</div>;
+  if (error) return <div className="flex justify-center items-center h-64 text-red-500">{t("analytics.common.error")} {error}</div>;
 
   return (
     <Card className="w-full overflow-hidden hover:shadow-md transition-shadow duration-200">
       <CardHeader className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
         <div>
-          <CardTitle>Course Ratings & Feedback</CardTitle>
-          <CardDescription>Average student ratings and recent feedback</CardDescription>
+          <CardTitle>{t("analytics.ratings.title")}</CardTitle>
+          <CardDescription>{t("analytics.ratings.desc")}</CardDescription>
         </div>
         <div className="h-10 w-10 rounded-full flex items-center justify-center bg-fidel-50 dark:bg-slate-800">
           <Star className="h-5 w-5 text-fidel-600 dark:text-fidel-400" />
@@ -103,7 +106,7 @@ const CourseRatingsFeedback = () => {
                 <div key={c.courseId} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                   <div>
                     <div className="text-sm font-medium">{c.courseTitle}</div>
-                    <div className="text-xs text-gray-500">{c.totalReviews} reviews</div>
+                    <div className="text-xs text-gray-500">{t("analytics.ratings.reviews").replace("{count}", c.totalReviews)}</div>
                   </div>
                   <div className="flex items-center">
                     <span className="font-bold mr-2">{c.avgRating.toFixed(1)}</span>
@@ -113,10 +116,10 @@ const CourseRatingsFeedback = () => {
               ))}
             </div>
           ) : (
-            <div className="text-gray-500 text-center py-4">No course ratings available.</div>
+            <div className="text-gray-500 text-center py-4">{t("analytics.ratings.empty")}</div>
           )}
 
-          <h4 className="font-medium text-sm mb-3 mt-6">Latest Feedback</h4>
+          <h4 className="font-medium text-sm mb-3 mt-6">{t("analytics.ratings.latest")}</h4>
           {feedbackData.length > 0 ? (
             <div className="space-y-3">
               {feedbackData.map((f) => (
@@ -134,7 +137,7 @@ const CourseRatingsFeedback = () => {
               ))}
             </div>
           ) : (
-            <div className="text-gray-500 text-center py-4">No feedback available.</div>
+            <div className="text-gray-500 text-center py-4">{t("analytics.ratings.noFeedback")}</div>
           )}
         </div>
       </CardContent>

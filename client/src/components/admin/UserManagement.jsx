@@ -26,10 +26,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, UserCheck, UserX, Eye } from "lucide-react";
+import { Search, Filter, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/context/LanguageContext";
 
 const UserManagement = ({ onViewUser }) => {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState("instructor");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -42,12 +44,12 @@ const UserManagement = ({ onViewUser }) => {
         if (response.data?.users) {
           setUsers(response.data.users);
         } else {
-          toast.error("Invalid API response format");
+          toast.error(t("admin.users.error.invalidResponse"));
           setUsers([]);
         }
       } catch (error) {
         console.error("Error fetching users:", error);
-        toast.error("Failed to load user data");
+        toast.error(t("admin.users.error.load"));
         setUsers([]);
       }
     };
@@ -73,26 +75,6 @@ const UserManagement = ({ onViewUser }) => {
       })
     : [];
 
-  const handleApproveUser = async (userId) => {
-    try {
-      await api.put(`/api/admin/approve-instructor/${userId}`);
-      toast.success(`User #${userId} has been approved`);
-    } catch (error) {
-      console.error(`Error approving User #${userId}:`, error);
-      toast.error(`Failed to approve User #${userId}`);
-    }
-  };
-
-  const handleRejectUser = async (userId) => {
-    try {
-      const response = await api.delete(`/api/admin/reject-instructor/${userId}`);
-      toast.error(`User #${userId} has been rejected`);
-    } catch (error) {
-      console.error("Error rejecting user:", error);
-      toast.error("Failed to reject user");
-    }
-  };
-
   const handleViewUser = (userId) => {
     onViewUser(userId);
   };
@@ -112,7 +94,7 @@ const UserManagement = ({ onViewUser }) => {
       );
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred while blocking the user");
+      alert(t("admin.users.error.block"));
     }
   };
 
@@ -129,15 +111,15 @@ const UserManagement = ({ onViewUser }) => {
       );
     } catch (error) {
       console.error("Error unblocking user:", error);
-      alert("Error unblocking user");
+      alert(t("admin.users.error.unblock"));
     }
   };
 
   return (
     <Card className="shadow-sm">
       <CardHeader>
-        <CardTitle>User Management</CardTitle>
-        <CardDescription>Manage all users across the platform</CardDescription>
+        <CardTitle>{t("admin.users.title")}</CardTitle>
+        <CardDescription>{t("admin.users.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex items-center space-x-2 mb-4 overflow-x-auto pb-2">
@@ -146,21 +128,21 @@ const UserManagement = ({ onViewUser }) => {
             onClick={() => setFilterStatus("all")}
             className="whitespace-nowrap"
           >
-            All
+            {t("admin.users.filter.all")}
           </Button>
           <Button
             variant={filterStatus === "active" ? "default" : "ghost"}
             onClick={() => setFilterStatus("active")}
             className="whitespace-nowrap"
           >
-            Active
+            {t("admin.users.filter.active")}
           </Button>
           <Button
             variant={filterStatus === "pending" ? "default" : "ghost"}
             onClick={() => setFilterStatus("pending")}
             className="whitespace-nowrap"
           >
-            Pending
+            {t("admin.users.filter.pending")}
           </Button>
         </div>
 
@@ -172,7 +154,7 @@ const UserManagement = ({ onViewUser }) => {
             />
             <Input
               className="pl-9 w-full md:w-64"
-              placeholder="Search users..."
+              placeholder={t("admin.users.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -181,11 +163,12 @@ const UserManagement = ({ onViewUser }) => {
           <div className="flex gap-2 items-center">
             <Select value={filterRole} onValueChange={setFilterRole}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by role" />
+                <SelectValue placeholder={t("admin.users.filter.role")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="student">Students</SelectItem>
-                <SelectItem value="instructor">Instructors</SelectItem>
+                <SelectItem value="student">{t("admin.users.roles.student")}</SelectItem>
+                <SelectItem value="instructor">{t("admin.users.roles.instructor")}</SelectItem>
+                <SelectItem value="approver">{t("admin.users.roles.approver")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -199,13 +182,13 @@ const UserManagement = ({ onViewUser }) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t("admin.users.table.id")}</TableHead>
+                <TableHead>{t("admin.users.table.name")}</TableHead>
+                <TableHead>{t("admin.users.table.email")}</TableHead>
+                <TableHead>{t("admin.users.table.role")}</TableHead>
+                <TableHead>{t("admin.users.table.status")}</TableHead>
+                <TableHead>{t("admin.users.table.joined")}</TableHead>
+                <TableHead>{t("admin.users.table.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -245,30 +228,10 @@ const UserManagement = ({ onViewUser }) => {
                             size="icon"
                             onClick={() => handleViewUser(user._id)}
                             className="h-8 w-8"
+                            aria-label={t("admin.users.actions.view")}
                           >
                             <Eye size={16} />
                           </Button>
-
-                          {userStatus === "pending" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleApproveUser(user._id)}
-                                className="h-8 w-8 text-green-600"
-                              >
-                                <UserCheck size={16} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRejectUser(user._id)}
-                                className="h-8 w-8 text-red-600"
-                              >
-                                <UserX size={16} />
-                              </Button>
-                            </>
-                          )}
 
                           {userStatus === "active" && !user.blocked && (
                             <Button
@@ -276,6 +239,7 @@ const UserManagement = ({ onViewUser }) => {
                               size="icon"
                               onClick={() => handleBlockUser(user._id)}
                               className="h-8 w-8 text-yellow-600"
+                              aria-label={t("admin.users.actions.block")}
                             >
                               <FaBan size={16} />
                             </Button>
@@ -287,6 +251,7 @@ const UserManagement = ({ onViewUser }) => {
                               size="icon"
                               onClick={() => handleUnblockUser(user._id)}
                               className="h-8 w-8 text-green-600"
+                              aria-label={t("admin.users.actions.unblock")}
                             >
                               <FaUnlock size={16} />
                             </Button>
@@ -301,13 +266,9 @@ const UserManagement = ({ onViewUser }) => {
         </div>
       </CardContent>
       <CardFooter className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Showing <span className="font-medium">{filteredUsers.length}</span> of{" "}
-          <span className="font-medium">{users.length}</span> users
-        </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" disabled>
-            Previous
+            {t("admin.users.pagination.previous")}
           </Button>
           <Button
             variant="outline"
@@ -317,7 +278,7 @@ const UserManagement = ({ onViewUser }) => {
             1
           </Button>
           <Button variant="outline" size="sm">
-            Next
+            {t("admin.users.pagination.next")}
           </Button>
         </div>
       </CardFooter>

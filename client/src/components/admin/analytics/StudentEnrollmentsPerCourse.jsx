@@ -20,8 +20,10 @@ import {
   Cell,
 } from "recharts";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const StudentEnrollmentsPerCourse = () => {
+  const { t } = useLanguage();
   const [enrollmentData, setEnrollmentData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,6 +36,29 @@ const StudentEnrollmentsPerCourse = () => {
     'data-science', 'psychology', 'finance', 'design', 'languages', 'health-fitness',
     'mathematics', 'photography', 'music', 'other', 'Machine Learning'
   ];
+
+  const categoryLabel = (category) => {
+    const map = {
+      'computer-science': 'analytics.categories.computerScience',
+      'programming': 'analytics.categories.programming',
+      'web-development': 'analytics.categories.webDevelopment',
+      'business': 'analytics.categories.business',
+      'marketing': 'analytics.categories.marketing',
+      'data-science': 'analytics.categories.dataScience',
+      'psychology': 'analytics.categories.psychology',
+      'finance': 'analytics.categories.finance',
+      'design': 'analytics.categories.design',
+      'languages': 'analytics.categories.languages',
+      'health-fitness': 'analytics.categories.healthFitness',
+      'mathematics': 'analytics.categories.mathematics',
+      'photography': 'analytics.categories.photography',
+      'music': 'analytics.categories.music',
+      'other': 'analytics.categories.other',
+      'Machine Learning': 'analytics.categories.machineLearning',
+    };
+    const key = map[category];
+    return key ? t(key) : category;
+  };
 
   // Map course titles to categories
   const mapCourseToCategory = (courseTitle) => {
@@ -120,7 +145,7 @@ const StudentEnrollmentsPerCourse = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-gray-500">{t("analytics.common.loading")}</p>
       </div>
     );
   }
@@ -128,7 +153,7 @@ const StudentEnrollmentsPerCourse = () => {
   if (error) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p className="text-red-500">Error: {error}</p>
+        <p className="text-red-500">{t("analytics.common.error", { error })}</p>
       </div>
     );
   }
@@ -136,8 +161,8 @@ const StudentEnrollmentsPerCourse = () => {
   return (
     <Card className="border shadow-sm hover:shadow-md transition-shadow duration-200">
       <CardHeader>
-        <CardTitle className="text-lg">Student Enrollments per Course</CardTitle>
-        <CardDescription>Number of students enrolled in each course by category</CardDescription>
+        <CardTitle className="text-lg">{t("analytics.enrollments.title")}</CardTitle>
+        <CardDescription>{t("analytics.enrollments.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent>
         {/* Top-Level Category Chart */}
@@ -152,13 +177,13 @@ const StudentEnrollmentsPerCourse = () => {
                 <XAxis dataKey="category" />
                 <YAxis />
                 <Tooltip
-                  formatter={(value) => [value, "Enrollments"]}
-                  labelFormatter={(label) => `Category: ${label}`}
+                  formatter={(value) => [value, t("analytics.enrollments.tooltip.label")]}
+                  labelFormatter={(label) => `${t("analytics.enrollments.tooltip.category")}: ${categoryLabel(label)}`}
                 />
                 <Legend />
                 <Bar
                   dataKey="enrollments"
-                  name="Number of Enrollments"
+                  name={t("analytics.enrollments.legend")}
                   fill="#8884d8"
                   radius={[4, 4, 0, 0]}
                 >
@@ -174,7 +199,7 @@ const StudentEnrollmentsPerCourse = () => {
           </div>
         ) : (
           <div className="h-72 flex items-center justify-center text-gray-500">
-            No enrollment data available.
+            {t("analytics.enrollments.empty")}
           </div>
         )}
 
@@ -195,11 +220,11 @@ const StudentEnrollmentsPerCourse = () => {
                   className="w-full flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <span className="text-lg font-semibold">
-                    {`${index + 1}. ${category.category}`}
+                    {`${index + 1}. ${categoryLabel(category.category)}`}
                   </span>
                   <span className="flex items-center">
                     <span className="mr-2 text-sm text-gray-500">
-                      {category.enrollments} Enrollments
+                      {t("analytics.enrollments.count", { count: category.enrollments })}
                     </span>
                     {isExpanded ? (
                       <ChevronUp className="h-5 w-5 text-gray-500" />
@@ -221,12 +246,12 @@ const StudentEnrollmentsPerCourse = () => {
                             <XAxis dataKey="courseTitle" />
                             <YAxis />
                             <Tooltip
-                              formatter={(value) => [value, "Enrollments"]}
-                              labelFormatter={(label) => `Course: ${label}`}
+                              formatter={(value) => [value, t("analytics.enrollments.tooltip.label")]}
+                              labelFormatter={(label) => `${t("analytics.enrollments.tooltip.course")}: ${label}`}
                             />
                             <Bar
                               dataKey="enrollments"
-                              name="Number of Enrollments"
+                              name={t("analytics.enrollments.legend")}
                               fill="#8884d8"
                               radius={[4, 4, 0, 0]}
                             >

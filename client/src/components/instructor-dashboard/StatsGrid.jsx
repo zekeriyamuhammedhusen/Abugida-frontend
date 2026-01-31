@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Users, BookOpen, CheckCircle, Star } from "lucide-react"; // Directly import icons
+import { useLanguage } from "@/context/LanguageContext";
 
 const StatsGrid = ({ stats }) => {
   const Icon = ({ name }) => {
@@ -12,6 +13,8 @@ const StatsGrid = ({ stats }) => {
     const Component = icons[name];
     return <Component size={20} className="text-fidel-500 dark:text-fidel-400" />;
   };
+
+  const { t } = useLanguage();
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
@@ -30,7 +33,7 @@ const StatsGrid = ({ stats }) => {
               </p>
               <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
               <p className="text-xs text-green-500 mt-1">
-                {stat.change} this month
+                {stat.change} {t("instructor.card.thisMonth")}
               </p>
             </div>
             <div className="p-3 rounded-lg bg-fidel-50 dark:bg-slate-800">

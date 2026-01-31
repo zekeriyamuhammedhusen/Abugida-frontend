@@ -9,6 +9,7 @@ import PublishTab from "./PublishTab";
 import ReplaceLessonDialog from "./ReplaceLessonDialog";
 import { toast } from "sonner";
 import api from '@/lib/api';
+import { useLanguage } from "@/context/LanguageContext";
 
 const InnerCourseBuilder = ({
   activeTab,
@@ -35,6 +36,7 @@ const InnerCourseBuilder = ({
   fileInputRef,
 }) => {
   const { courseId, setCourseId } = useCourse();
+  const { t } = useLanguage();
 
   const handleReplaceLessonWithVideo = () => {
     if (!lessonToReplace) return;
@@ -167,15 +169,15 @@ const InnerCourseBuilder = ({
           <TabsList className="grid grid-cols-3 mb-1">
             <TabsTrigger value="details" className="flex items-center gap-2">
               <Book size={16} />
-              <span>Basic Details</span>
+              <span>{t("instructor.create.tabs.details")}</span>
             </TabsTrigger>
             <TabsTrigger value="curriculum" className="flex items-center gap-2">
               <BookOpen size={16} />
-              <span>Curriculum</span>
+              <span>{t("instructor.create.tabs.curriculum")}</span>
             </TabsTrigger>
             <TabsTrigger value="publish" className="flex items-center gap-2">
               <UploadCloud size={16} />
-              <span>Publish</span>
+              <span>{t("instructor.create.tabs.publish")}</span>
             </TabsTrigger>
           </TabsList>
         </div>

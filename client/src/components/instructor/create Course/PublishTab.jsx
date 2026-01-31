@@ -4,14 +4,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import api from '@/lib/api';
+import { useLanguage } from "@/context/LanguageContext";
 
 const PublishTab = ({ courseId, modules, initialPublished }) => {
   const [isPublished, setIsPublished] = useState(initialPublished);
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useLanguage();
 
   const handleSave = async () => {
     if (!courseId || modules.length === 0) {
-      toast.error("Please create a course and at least one module before publishing.");
+      toast.error(t("instructor.publish.error.missing"));
       return;
     }
 
@@ -32,31 +34,31 @@ const PublishTab = ({ courseId, modules, initialPublished }) => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-4">Ready to Publish?</h3>
+        <h3 className="text-lg font-medium mb-4">{t("instructor.publish.title")}</h3>
         <p className="text-sm text-muted-foreground mb-6">
-          Review your course information and curriculum before publishing
+          {t("instructor.publish.subtitle")}
         </p>
 
         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800 p-4 mb-6">
-          <h4 className="font-medium mb-2">Publishing Checklist</h4>
+          <h4 className="font-medium mb-2">{t("instructor.publish.checklist")}</h4>
           <ul className="space-y-1">
             <li className="flex items-center text-sm">
               <div className="h-4 w-4 rounded-full mr-2 bg-green-500"></div>
-              Course title and description are complete
+              {t("instructor.publish.item.meta")}
             </li>
             <li className="flex items-center text-sm">
               <div className="h-4 w-4 rounded-full mr-2 bg-green-500"></div>
-              At least one module with content is created
+              {t("instructor.publish.item.module")}
             </li>
             <li className="flex items-center text-sm">
               <div className="h-4 w-4 rounded-full mr-2 bg-green-500"></div>
-              Pricing information is set
+              {t("instructor.publish.item.price")}
             </li>
           </ul>
         </div>
 
         <div className="flex items-center space-x-4 mb-6">
-          <Label htmlFor="publish-switch">Publish</Label>
+          <Label htmlFor="publish-switch">{t("instructor.publish.label.switch")}</Label>
           <Switch
             id="publish-switch"
             checked={isPublished}
@@ -64,8 +66,8 @@ const PublishTab = ({ courseId, modules, initialPublished }) => {
           />
           <span className="text-sm text-muted-foreground">
             {isPublished
-              ? "This course will be published"
-              : "This course will remain a draft"}
+              ? t("instructor.publish.state.published")
+              : t("instructor.publish.state.draft")}
           </span>
         </div>
 
@@ -76,10 +78,10 @@ const PublishTab = ({ courseId, modules, initialPublished }) => {
           onClick={handleSave}
         >
           {isLoading
-            ? "Saving..."
+            ? t("instructor.publish.button.saving")
             : isPublished
-            ? "Publish Course"
-            : "Save as Draft"}
+            ? t("instructor.publish.button.publish")
+            : t("instructor.publish.button.draft")}
         </Button>
       </div>
     </div>

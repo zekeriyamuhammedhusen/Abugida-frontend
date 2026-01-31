@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Award } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 import api from "@/lib/api";
 
 const COLORS = ["#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE", "#DBEAFE"];
@@ -27,6 +28,8 @@ const StudentProgressCompletion = ({ timeRange }) => {
 
     return cleaned.replace(/\b\w/g, (c) => c.toUpperCase());
   };
+
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchProgressData = async () => {
@@ -55,9 +58,9 @@ const StudentProgressCompletion = ({ timeRange }) => {
     <Card className="w-full overflow-hidden hover:shadow-md transition-shadow duration-200">
       <CardHeader className="flex flex-row items-center justify-between bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
         <div>
-          <CardTitle>Student Progress & Completion</CardTitle>
+          <CardTitle>{t("analytics.progress.title")}</CardTitle>
           <CardDescription>
-            Percentage of students who completed course modules
+            {t("analytics.progress.desc")}
           </CardDescription>
         </div>
         <div className="h-10 w-10 rounded-full flex items-center justify-center bg-fidel-50 dark:bg-slate-800">
@@ -67,7 +70,7 @@ const StudentProgressCompletion = ({ timeRange }) => {
       <CardContent className="p-0">
         <div className="h-[300px] p-6">
           {loading ? (
-            <div className="flex justify-center items-center h-full">Loading...</div>
+            <div className="flex justify-center items-center h-full">{t("analytics.common.loading")}</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -95,10 +98,15 @@ const StudentProgressCompletion = ({ timeRange }) => {
                       return (
                         <div className="bg-white dark:bg-slate-800 p-2 rounded shadow-lg border border-slate-200 dark:border-slate-700">
                           <p className="text-sm font-medium">
-                            {`${payload[0].payload.label}: ${payload[0].value}%`}
+                            {t("analytics.progress.tooltip.pct")
+                              .replace("{label}", payload[0].payload.label)
+                              .replace("{value}", payload[0].value)}
                           </p>
                           <p className="text-sm">
-                            {`Number of students: ${payload[0].payload.count}`}
+                            {t("analytics.progress.tooltip.count").replace(
+                              "{count}",
+                              payload[0].payload.count
+                            )}
                           </p>
                         </div>
                       );
@@ -110,17 +118,21 @@ const StudentProgressCompletion = ({ timeRange }) => {
             </ResponsiveContainer>
           )}
           {!loading && data.length > 0 && (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {data.map((entry, index) => (
-                <div key={entry.label} className="flex items-center space-x-2">
-                  <span
-                    className="inline-block h-3 w-3 rounded-sm"
-                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    aria-hidden
-                  />
-                  <span className="font-medium">{entry.label}</span>
-                  <span className="text-muted-foreground">{entry.value}%</span>
-                  <span className="text-muted-foreground">· {entry.count} students</span>
+                <div key={entry.label} className="space-y-1">
+                  <div className="flex items-center space-x-2 min-w-0">
+                    <span
+                      className="inline-block h-3 w-3 rounded-sm flex-shrink-0"
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      aria-hidden
+                    />
+                    <span className="font-medium truncate">{entry.label}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-muted-foreground">
+                    <span>{entry.value}%</span>
+                    <span>· {entry.count} {t("instructor.common.students") || "students"}</span>
+                  </div>
                 </div>
               ))}
             </div>

@@ -1,5 +1,6 @@
 import { Bell, MessageSquare, Settings } from "lucide-react";
 import ThemeToggle from "../ui/ThemeToggle";
+import { useLanguage } from "@/context/LanguageContext";
 
 const Header = ({
   activeTab,
@@ -9,22 +10,13 @@ const Header = ({
   notificationCount = 0,
   messageCount = 0,
 }) => {
-  const tabTitles = {
-    dashboard: "Dashboard",
-    courses: "My Courses",
-    students: "Students",
-    messages: "Messages",
-    certificates: "Certificates",
-    payments: "Payments",
-    calendar: "Calendar",
-    settings: "Settings",
-  };
+  const { t } = useLanguage();
 
   return (
     <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 md:px-6 sticky top-0 z-40">
       <div className="flex items-center">
         <h1 className="text-xl md:text-2xl font-bold pl-12 pt-3">
-          {tabTitles[activeTab] || "Dashboard"}
+          {t(`instructor.sidebar.${activeTab}`) || t("instructor.sidebar.dashboard")}
         </h1>
       </div>
       <div className="flex items-center space-x-3">

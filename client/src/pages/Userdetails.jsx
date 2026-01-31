@@ -16,8 +16,6 @@ import {
   Calendar,
   User,
   FileText,
-  CheckCircle,
-  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
@@ -59,41 +57,6 @@ const UserDetail = ({ userId, onBack, embedded = false }) => {
     toast.success("File opened in a new window");
   };
 
-  const handleApproveUser = async (userId) => {
-    try {
-      await api.put(`/api/admin/approve-instructor/${userId}`);
-
-      setUserData((prev) => ({ ...prev, status: "active" }));
-      toast.success(`User #${userId} has been approved`);
-    } catch (error) {
-      console.error(
-        `Error approving User #${userId}:`,
-        error.response?.data || error.message
-      );
-      toast.error(`Failed to approve User #${userId}`);
-    }
-  };
-
-  const handleRejectUser = async (user) => {
-    const userId = user?._id;
-    if (!userId) {
-      toast.error("User ID is missing");
-      return;
-    }
-
-    try {
-      await api.delete(`/api/admin/reject-instructor/${userId}`);
-
-      setUserData((prev) => ({ ...prev, status: "blocked" }));
-      toast.success(`User #${userId} has been rejected`);
-    } catch (error) {
-      console.error(
-        "Error rejecting user:",
-        error.response?.data || error.message
-      );
-      toast.error("Failed to reject user");
-    }
-  };
 
   const getUserInitials = () => {
     if (!userData?.name) return "";
@@ -221,27 +184,7 @@ const UserDetail = ({ userId, onBack, embedded = false }) => {
               </div>
             )}
           </CardContent>
-          <CardFooter className="flex flex-col gap-3">
-            {userData.status === "pending" ? (
-              <>
-                <Button
-                  className="w-full flex items-center"
-                  onClick={() => handleApproveUser(userData._id)}
-                >
-                  <CheckCircle size={16} className="mr-2" />
-                  Approve User
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="w-full flex items-center"
-                  onClick={() => handleRejectUser(userData)}
-                >
-                  <XCircle size={16} className="mr-2" />
-                  Reject User
-                </Button>
-              </>
-            ) : null}
-          </CardFooter>
+          <CardFooter />
         </Card>
 
         <Card className="md:col-span-2">

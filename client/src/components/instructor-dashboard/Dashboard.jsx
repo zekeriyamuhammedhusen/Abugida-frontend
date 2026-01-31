@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import axios from "axios";
 import api from "@/lib/api";
 import {
@@ -32,6 +33,7 @@ const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [internalDateFilter, setInternalDateFilter] = useState("all");
   const dateFilter = controlledDateFilter ?? internalDateFilter;
+  const { t } = useLanguage();
   const [error, setError] = useState(null);
 
   const getDateRange = (filter) => {
@@ -113,10 +115,10 @@ const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 bg-clip-text bg-gradient-to-r from-teal-500 to-blue-600">
-            Instructor Dashboard
+            {t("instructor.header.dashboard")}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Track your course performance and earnings
+            {t("instructor.header.subtitle")}
           </p>
         </div>
         <Select onValueChange={handleDateFilterChange} value={dateFilter}>
@@ -151,7 +153,7 @@ const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => 
               <Card className="border-none bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg rounded-xl group hover:shadow-teal-100 dark:hover:shadow-teal-900/30 transition-all">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Gross Revenue (100%)
+                    {t("instructor.card.grossRevenue")}
                   </CardTitle>
                   <div className="p-2 rounded-lg bg-teal-50 dark:bg-teal-900/30 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/40">
                     <DollarSign className="h-5 w-5 text-teal-600 dark:text-teal-400" />
@@ -162,7 +164,7 @@ const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => 
                     {formatCurrency(earningsData?.summary.totalReceived)}
                   </div>
                   <div className="flex items-center mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    This is the full amount students paid.
+                    {t("instructor.card.grossRevenue.help")}
                   </div>
                 </CardContent>
               </Card>
@@ -170,7 +172,7 @@ const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => 
               <Card className="border-none bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg rounded-xl group hover:shadow-blue-100 dark:hover:shadow-blue-900/30 transition-all">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Your Earnings (80% share)
+                    {t("instructor.card.yourEarnings")}
                   </CardTitle>
                   <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40">
                     <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -181,7 +183,7 @@ const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => 
                     {formatCurrency(earningsData?.summary.totalInstructorEarnings)}
                   </div>
                   <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    Calculated as 80% of gross revenue.
+                    {t("instructor.card.yourEarnings.help")}
                   </div>
                 </CardContent>
               </Card>
@@ -189,7 +191,7 @@ const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => 
             <Card className="border-none bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg rounded-xl group hover:shadow-blue-100 dark:hover:shadow-blue-900/30 transition-all">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Platform Revenue
+                  {t("instructor.card.platformRevenue")}
                 </CardTitle>
                 <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40">
                   <PieChart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -215,7 +217,7 @@ const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => 
             <Card className="border-none bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg rounded-xl group hover:shadow-purple-100 dark:hover:shadow-purple-900/30 transition-all">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Total Students
+                  {t("instructor.card.totalStudents")}
                 </CardTitle>
                 <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/30 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/40">
                   <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -228,7 +230,7 @@ const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => 
                 <div className="flex items-center mt-2">
                   <BookOpen className="h-4 w-4 text-gray-400 mr-1" />
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Across {activeCourses.length} courses
+                    {t("instructor.card.acrossCourses").replace("{count}", String(activeCourses.length))}
                   </span>
                 </div>
               </CardContent>
@@ -238,7 +240,7 @@ const Dashboard = ({ dateFilter: controlledDateFilter, onDateFilterChange }) => 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 border-none bg-white dark:bg-gray-900 shadow-lg rounded-xl">
               <CardHeader>
-                <CardTitle>Course Performance</CardTitle>
+                <CardTitle>{t("instructor.section.coursePerformance")}</CardTitle>
                 <CardDescription>
                   Earnings breakdown by course
                 </CardDescription>

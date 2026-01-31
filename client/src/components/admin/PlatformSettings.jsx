@@ -16,7 +16,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
 const PlatformSettings = () => {
-  const { refreshUser } = useAuth();
+  const { refreshUser, user: authUser } = useAuth();
   const [user, setUser] = useState({
     profilePic: "",
     name: "",
@@ -35,6 +35,7 @@ const PlatformSettings = () => {
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
+  const isStudent = (user?.role || authUser?.role) === "student";
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -248,6 +249,7 @@ const PlatformSettings = () => {
                           value={formData.name}
                           onChange={handleInputChange}
                           placeholder="Your full name"
+                          readOnly={isStudent}
                         />
                       </div>
 

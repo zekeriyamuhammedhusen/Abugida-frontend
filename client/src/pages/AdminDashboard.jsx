@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -18,24 +18,28 @@ import PlatformAnalytics from "@/components/admin/PlatformAnalytics";
 import PaymentManagement from "@/components/admin/PaymentManagement";
 import PlatformSettings from "../components/admin/PlatformSettings";
 import UserManagement from "../components/admin/UserManagement";
+import AddApprover from "../components/admin/AddApprover";
 import UserDetail from "../pages/Userdetails";
 import Logo from "../components/layout/Logo";
 import { useAuth } from "../context/AuthContext";
 import CourseTable from "../components/instructor-dashboard/CourseTable";
 import { useLanguage } from "@/context/LanguageContext";
+import api from "@/lib/api";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [adminCourses, setAdminCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
   const { t } = useLanguage();
 
   const navItems = [
     { id: "overview", label: t("admin.nav.overview"), icon: Layers },
     { id: "users", label: t("admin.nav.users"), icon: Users },
     { id: "courses", label: t("admin.nav.courses"), icon: BookOpen },
-    { id: "analytics", label: t("admin.nav.analytics"), icon: PieChart },
     { id: "payments", label: t("admin.nav.payments"), icon: Award },
+    { id: "approver", label: t("admin.nav.approver"), icon: Shield },
     { id: "settings", label: t("admin.nav.settings"), icon: Settings },
   ];
 
@@ -60,6 +64,51 @@ const AdminDashboard = () => {
   };
 
   const { user } = useAuth();
+
+  useEffect(() => {
+    if (activeTab === "courses") {
+      fetchAllCourses();
+    }
+  }, [activeTab]);
+
+  const fetchAllCourses = async () => {
+    try {
+      setCoursesLoading(true);
+      const response = await api.get('/api/courses/all');
+      const list = Array.isArray(response.data) ? response.data : [];
+      const enriched = await Promise.all(
+        list.map(async (course) => {
+          const courseId = course._id;
+          let students = 0;
+          let progress = 0;
+          try {
+            const sRes = await api.get(`/api/courses/${courseId}/student-count`);
+            students = sRes?.data?.studentCount ?? 0;
+          } catch {}
+          try {
+            const instructorId = course?.instructor?._id || course?.instructor;
+            if (instructorId) {
+              const pRes = await api.get(`/api/courses/${instructorId}/course/${courseId}/average-progress`);
+              progress = Math.round(pRes?.data?.averageProgress ?? 0);
+            }
+          } catch {}
+          return {
+            _id: courseId,
+            id: courseId,
+            title: course.title,
+            students,
+            progress,
+            updatedAt: course.updatedAt || course.createdAt || new Date().toISOString(),
+          };
+        })
+      );
+      setAdminCourses(enriched);
+    } catch (err) {
+      setAdminCourses([]);
+    } finally {
+      setCoursesLoading(false);
+    }
+  };
 
   return (
     <div className="flex h-[100vh] dark:bg-slate-950">
@@ -194,21 +243,9 @@ const AdminDashboard = () => {
             transition={{ duration: 0.3 }}
           >
             <CourseTable
-              courses={[]} // Replace with actual course data
+              courses={adminCourses}
               showActions={true}
-              onEdit={(id) => console.log("Edit course", id)}
-              onDelete={(id) => console.log("Delete course", id)}
             />
-          </motion.div>
-        )}
-
-        {activeTab === "analytics" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <PlatformAnalytics />
           </motion.div>
         )}
 
@@ -219,6 +256,16 @@ const AdminDashboard = () => {
             transition={{ duration: 0.3 }}
           >
             <PaymentManagement />
+          </motion.div>
+        )}
+
+        {activeTab === "approver" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <AddApprover />
           </motion.div>
         )}
 

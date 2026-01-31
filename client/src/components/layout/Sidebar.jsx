@@ -1,6 +1,7 @@
 import { Menu, Plus } from "lucide-react";
 import { BarChart, BookOpen, Users, MessageSquare, CreditCard, Award, Calendar, Settings } from "lucide-react";
 import Logo from "./Logo";
+import { useLanguage } from "@/context/LanguageContext";
 
 const Sidebar = ({
   isSidebarOpen,
@@ -10,15 +11,16 @@ const Sidebar = ({
   handleCreateCourse,
   user,
 }) => {
+  const { t } = useLanguage();
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: BarChart },
-    { id: "courses", label: "My Courses", icon: BookOpen },
-    { id: "students", label: "Students", icon: Users },
-    { id: "messages", label: "Messages", icon: MessageSquare },
-    { id: "payments", label: "Payments", icon: CreditCard },
-    // { id: "certificates", label: "Certificates", icon: Award },
-    // { id: "calendar", label: "Calendar", icon: Calendar },
-    { id: "settings", label: "Settings", icon: Settings },
+    { id: "dashboard", label: t("instructor.sidebar.dashboard"), icon: BarChart },
+    { id: "courses", label: t("instructor.sidebar.courses"), icon: BookOpen },
+    { id: "students", label: t("instructor.sidebar.students"), icon: Users },
+    { id: "messages", label: t("instructor.sidebar.messages"), icon: MessageSquare },
+    { id: "payments", label: t("instructor.sidebar.payments"), icon: CreditCard },
+    // { id: "certificates", label: t("instructor.sidebar.certificates"), icon: Award },
+    // { id: "calendar", label: t("instructor.sidebar.calendar"), icon: Calendar },
+    { id: "settings", label: t("instructor.sidebar.settings"), icon: Settings },
   ];
 
   const Icon = ({ IconComponent }) => {
@@ -67,7 +69,7 @@ const Sidebar = ({
               onClick={handleCreateCourse}
             >
               <Plus size={18} className="mr-2" />
-              Create New Course
+              {t("instructor.sidebar.createCourse")}
             </button>
             <div className="flex items-center p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
               <div className="h-10 w-10 rounded-full bg-fidel-100 dark:bg-fidel-900/30 flex items-center justify-center text-fidel-600 dark:text-fidel-400 font-medium text-sm">

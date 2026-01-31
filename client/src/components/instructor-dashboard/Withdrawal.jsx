@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import axios from "axios";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ const bankGroups = [
 ];
 
 const Withdrawal = ({ user, dateFilter = "all" }) => {
+  const { t } = useLanguage();
   const [bankDetails, setBankDetails] = useState({
     accountName: user?.bankDetails?.accountName || "",
     accountNumber: user?.bankDetails?.accountNumber || "",
@@ -75,8 +77,37 @@ const Withdrawal = ({ user, dateFilter = "all" }) => {
       const params = new URLSearchParams();
       if (dateFilter && dateFilter !== 'all') params.set('range', dateFilter);
       const qs = params.toString();
-      const response = await api.get(`/api/withdrawals/balance${qs ? `?${qs}` : ''}`);
-      setBalance(response.data.balance);
+      // Primary source: Payment Dashboard summary (Your Earnings)
+      // This aligns the displayed available balance with the dashboard.
+      const dashRes = await api.get(`/api/withdrawals/InstructorEarnings${qs ? `?${qs}` : ''}`);
+      const dashRaw = dashRes?.data?.summary?.totalInstructorEarnings;
+      let dashBalance = Number(dashRaw);
+      if (!Number.isFinite(dashBalance) && typeof dashRaw === 'string') {
+        dashBalance = parseFloat(dashRaw.replace(/[^0-9.-]/g, ''));
+      }
+
+      // Fallback: dedicated balance endpoint if dashboard data is unavailable
+      if (!Number.isFinite(dashBalance)) {
+        const balRes = await api.get(`/api/withdrawals/balance${qs ? `?${qs}` : ''}`);
+        const rawBalance = 
+          balRes?.data?.balance ??
+          balRes?.data?.data?.balance ??
+          balRes?.data?.result?.balance ??
+          balRes?.data?.payload?.balance ??
+          balRes?.data?.availableBalance ??
+          balRes?.data?.available_balance;
+
+        if (typeof rawBalance === 'number') {
+          dashBalance = rawBalance;
+        } else if (typeof rawBalance === 'string') {
+          const cleaned = rawBalance.replace(/[^0-9.-]/g, '');
+          dashBalance = parseFloat(cleaned);
+        } else {
+          dashBalance = Number(rawBalance);
+        }
+      }
+
+      setBalance(Number.isFinite(dashBalance) ? dashBalance : 0);
     } catch (error) {
       toast.error("Failed to fetch balance");
       console.error("Balance fetch error:", error);
@@ -170,20 +201,20 @@ const Withdrawal = ({ user, dateFilter = "all" }) => {
     <div className="space-y-6 max-w-4xl mx-auto p-4 sm:p-6 bg-gray-50 dark:bg-gray-950 min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 classNamenehm4 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Withdraw Funds</h1>
-          <p className="text-gray-500 dark:text-gray-400">Manage your withdrawals</p>
+          <h1 classNamenehm4 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">{t("instructor.withdraw.title")}</h1>
+          <p className="text-gray-500 dark:text-gray-400">{t("instructor.withdraw.subtitle")}</p>
         </div>
         
         <div className="w-full md:w-auto">
           <div className="bg-gradient-to-br from-fidel-500 to-fidel-600 rounded-xl p-4 shadow-lg text-white">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-medium opacity-80">Available Balance</p>
+                <p className="text-sm font-medium opacity-80">{t("instructor.withdraw.availableBalance")}</p>
                 {balanceLoading ? (
                   <Skeleton className="h-8 w-32 bg-fidel-400/30 mt-1" />
                 ) : (
                   <p className="text-2xl font-bold mt-1">
-                    {balance?.toLocaleString('en-US') || 0} ETB
+                    {(Number.isFinite(Number(balance)) ? Number(balance) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
                   </p>
                 )}
               </div>
@@ -307,7 +338,7 @@ const Withdrawal = ({ user, dateFilter = "all" }) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-gray-700 dark:text-gray-300">Amount (ETB)</Label>
+              <Label htmlFor="amount" className="text-gray-700 dark:text-gray-300">{t("instructor.withdraw.amount")}</Label>
               <div className="relative">
                 <span className="absolute left-4 top-3.5 text-gray-500 dark:text-gray-400">ETB</span>
                 <Input
@@ -318,7 +349,7 @@ const Withdrawal = ({ user, dateFilter = "all" }) => {
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
                   min="100"
-                  max={balance}
+                  max={Number.isFinite(Number(balance)) ? Number(balance) : 0}
                   aria-label="Amount in ETB"
                 />
                 <button 
@@ -326,11 +357,11 @@ const Withdrawal = ({ user, dateFilter = "all" }) => {
                   className="absolute right-4 top-3 text-sm font-medium text-fidel-600 dark:text-fidel-400 hover:text-fidel-700 dark:hover:text-teal-300 transition-colors"
                   aria-label="Set maximum amount"
                 >
-                  Max
+                  {t("instructor.withdraw.max")}
                 </button>
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Available: {balance?.toLocaleString('en-US') || 0} ETB
+                Available: {(Number.isFinite(Number(balance)) ? Number(balance) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
               </p>
             </div>
           </CardContent>
@@ -348,7 +379,7 @@ const Withdrawal = ({ user, dateFilter = "all" }) => {
                 </>
               ) : (
                 <>
-                  Withdraw Funds
+                  {t("instructor.withdraw.initiate")}
                   <ChevronRight className="ml-2 h-5 w-5" />
                 </>
               )}
@@ -357,18 +388,14 @@ const Withdrawal = ({ user, dateFilter = "all" }) => {
             <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-4 w-full space-y-3 border border-fidel-200 dark:border-fidel-800/30">
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-fidel-600 dark:text-fidel-400" />
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  Please ensure your bank details are correct before proceeding with the withdrawal.    
-                  <br />
-                  Funds will be transferred to the provided account name and number.
-                  <br />
-                  If you have any issues, please contact support.
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                  {t("instructor.withdraw.ensureHint")}
                 </p>
               </div>
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-fidel-600 dark:text-fidel-400" />
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  Minimum withdrawal amount: 100 ETB
+                  {t("instructor.withdraw.minHint")}
                 </p>
               </div>
             </div>

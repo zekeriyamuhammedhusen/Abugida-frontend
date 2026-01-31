@@ -17,7 +17,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-
+import { useLanguage } from "@/context/LanguageContext";
 const feedbackData = [
   { name: "Web Development", rating: 4.8, reviews: 125 },
   { name: "Data Science", rating: 4.6, reviews: 98 },
@@ -27,19 +27,36 @@ const feedbackData = [
 ];
 
 const CourseRatingsFeedback = () => {
+  const { t } = useLanguage();
+
+  const getCourseLabel = (name) => {
+    const map = {
+      "Web Development": "analytics.ratings.course.webDevelopment",
+      "Data Science": "analytics.ratings.course.dataScience",
+      "Design": "analytics.ratings.course.design",
+      "Marketing": "analytics.ratings.course.marketing",
+      "Business": "analytics.ratings.course.business",
+    };
+    const key = map[name];
+    return key ? t(key) : name;
+  };
+
   return (
     <Card className="border shadow-sm hover:shadow-md transition-shadow duration-200">
       <CardHeader>
-        <CardTitle className="text-lg">Course Ratings & Feedback</CardTitle>
+        <CardTitle className="text-lg">{t("analytics.ratings.title")}</CardTitle>
         <CardDescription>
-          Average ratings and number of reviews per course
+          {t("analytics.ratings.subtitle")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={feedbackData}
+              data={feedbackData.map((item) => ({
+                ...item,
+                name: getCourseLabel(item.name),
+              }))}
               margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -48,15 +65,15 @@ const CourseRatingsFeedback = () => {
               <YAxis yAxisId="right" orientation="right" domain={[0, 150]} />
               <Tooltip
                 formatter={(value, name) => {
-                  if (name === "Rating") return [value, "Average Rating"];
-                  return [value, "Number of Reviews"];
+                  if (name === t("analytics.ratings.legend.rating")) return [value, t("analytics.ratings.tooltip.rating")];
+                  return [value, t("analytics.ratings.tooltip.reviews")];
                 }}
               />
               <Legend />
               <Bar
                 yAxisId="left"
                 dataKey="rating"
-                name="Average Rating"
+                name={t("analytics.ratings.legend.rating")}
                 fill="#8884d8"
                 radius={[4, 4, 0, 0]}
               >
@@ -70,7 +87,7 @@ const CourseRatingsFeedback = () => {
               <Bar
                 yAxisId="right"
                 dataKey="reviews"
-                name="Number of Reviews"
+                name={t("analytics.ratings.legend.reviews")}
                 fill="#82ca9d"
                 radius={[4, 4, 0, 0]}
               >

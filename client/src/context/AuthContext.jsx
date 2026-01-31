@@ -125,6 +125,7 @@ export const AuthProvider = ({ children }) => {
       case "student": return "/";
       case "instructor": return "/instructor-dashboard";
       case "admin": return "/admin-dashboard";
+      case "approver": return "/approver-dashboard";
       default: return "/";
     }
   };

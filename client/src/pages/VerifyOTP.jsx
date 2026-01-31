@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
+import api from '@/lib/api';
 
 const VerifyOTP = () => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -57,16 +58,16 @@ const VerifyOTP = () => {
         setIsVerifying(true);
 
         try {
-            // Simulate API verification
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // On successful verification
-            toast({
-                title: "Account Verified!",
-                description: "Your account has been successfully created",
+            const response = await api.post('/api/otp/verify-otp', {
+                email,
+                otp: fullOtp,
             });
 
-            // Navigate to login page with success state
+            toast({
+                title: "Account Verified!",
+                description: response.data?.message || "Your account has been successfully verified",
+            });
+
             navigate('/login', {
                 state: {
                     registrationSuccess: true,
@@ -78,8 +79,7 @@ const VerifyOTP = () => {
 
         } catch (error) {
             toast({
-                title: "Verification Failed",
-                description: error.message || "Invalid verification code",
+                description: error?.response?.data?.message || error.message || "Invalid verification code",
                 variant: "destructive",
             });
         } finally {
@@ -92,17 +92,14 @@ const VerifyOTP = () => {
         setCountdown(60);
         
         try {
-            // Simulate resend API call
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
+            await api.post('/api/otp/send-otp', { email });
             toast({
                 title: "New Code Sent",
                 description: `A new verification code has been sent to ${email}`,
             });
         } catch (error) {
             toast({
-                title: "Resend Failed",
-                description: error.message || "Please try again later",
+                description: error?.response?.data?.message || error.message || "Please try again later",
                 variant: "destructive",
             });
             setResendDisabled(false);

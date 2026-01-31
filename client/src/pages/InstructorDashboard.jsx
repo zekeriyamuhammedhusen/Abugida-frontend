@@ -180,24 +180,24 @@ const InstructorDashboard = () => {
 
       const newStats = [
         {
-          title: "Total Students",
+          title: t("instructor.card.totalStudents"),
           value: totalStudents.toString(),
           icon: "Users",
           change: "+0",
         },
         {
-          title: "Active Courses",
+          title: t("instructor.card.activeCourses"),
           value: activeCourses.toString(),
           icon: "BookOpen",
           change: "+0",
         },
         {
-          title: "Completion Rate",
+          title: t("instructor.card.completionRate"),
           value: `${avgCompletion}%`,
           icon: "CheckCircle",
           change: "+0%",
         },
-        { title: "Avg. Rating", value: "4.8", icon: "Star", change: "+0.2" },
+        { title: t("instructor.card.avgRating"), value: "4.8", icon: "Star", change: "+0.2" },
       ];
 
       setStats(newStats);
@@ -271,7 +271,7 @@ const InstructorDashboard = () => {
           notificationCount={notificationCount}
           messageCount={messageCount}
         />
-        <div className="p-5">
+        <div className={activeTab === "students" ? "p-3" : "p-5"}>
           {loading.overall ? (
             <div className="flex flex-col items-center justify-center p-8">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>

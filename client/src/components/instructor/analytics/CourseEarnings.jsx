@@ -16,12 +16,15 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { TrendingUp } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 import api from "@/lib/api";
 
 const CourseEarnings = ({ paymentMethod, timeRange }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchEarnings = async () => {
@@ -54,11 +57,13 @@ const CourseEarnings = ({ paymentMethod, timeRange }) => {
       <CardHeader className="flex flex-row items-center justify-between bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
         <div>
           <CardTitle>
-            Course Earnings (via{" "}
-            {paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)})
+            {t("analytics.courseEarnings.title").replace(
+              "{method}",
+              paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)
+            )}
           </CardTitle>
           <CardDescription>
-            Monthly revenue generated from course sales
+            {t("analytics.courseEarnings.desc")}
           </CardDescription>
         </div>
         <div className="h-10 w-10 rounded-full flex items-center justify-center bg-fidel-50 dark:bg-slate-800">
@@ -68,12 +73,12 @@ const CourseEarnings = ({ paymentMethod, timeRange }) => {
       <CardContent className="p-0">
         <div className="h-[300px] p-6">
           {loading ? (
-            <div className="flex items-center justify-center h-full">Loading…</div>
+            <div className="flex items-center justify-center h-full">{t("analytics.common.loading")}</div>
           ) : error ? (
-            <div className="flex items-center justify-center h-full text-red-500">{error}</div>
+            <div className="flex items-center justify-center h-full text-red-500">{t("analytics.common.error")} {error}</div>
           ) : data.length === 0 ? (
             <div className="flex items-center justify-center h-full text-muted-foreground">
-              No earnings data available.
+              {t("analytics.courseEarnings.empty")}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">

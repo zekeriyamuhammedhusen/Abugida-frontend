@@ -19,6 +19,7 @@ import {
   LabelList,
 } from "recharts";
 import { Users, ChevronDown, ChevronUp } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const StudentEnrollmentsPerCourse = ({ timeRange }) => {
   const [data, setData] = useState([]);
@@ -74,6 +75,8 @@ const StudentEnrollmentsPerCourse = ({ timeRange }) => {
 
   // Opacity sequence shifted to start from 1
   const opacitySequence = [1, 1.75, 2.5, 3.25, 4]; // Adjusted from 0, 0.75, 1.5, 2.25, 3
+
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchEnrollments = async () => {
@@ -132,16 +135,18 @@ const StudentEnrollmentsPerCourse = ({ timeRange }) => {
     }));
   };
 
-  if (loading) return <div className="flex justify-center items-center h-64">Loading…</div>;
-  if (error) return <div className="flex justify-center items-center h-64 text-red-500">Error: {error}</div>;
+  if (loading) return <div className="flex justify-center items-center h-64">{t("analytics.common.loading")}</div>;
+  if (error) return <div className="flex justify-center items-center h-64 text-red-500">{t("analytics.common.error")} {error}</div>;
 
   return (
     <Card className="w-full overflow-hidden hover:shadow-md transition-shadow duration-200">
       <CardHeader className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
         <div>
-          <CardTitle>Student Enrollments per Course</CardTitle>
+          <CardTitle>{t("analytics.enrollments.title")}</CardTitle>
           <CardDescription>
-            Total Enrollments: {totalEnrollments} across {data.length} courses
+            {t("analytics.enrollments.desc")
+              .replace("{total}", totalEnrollments)
+              .replace("{count}", data.length)}
           </CardDescription>
         </div>
         <div className="h-10 w-10 rounded-full flex items-center justify-center bg-fidel-50 dark:bg-slate-800">
@@ -161,7 +166,11 @@ const StudentEnrollmentsPerCourse = ({ timeRange }) => {
                   content={({ active, payload }) =>
                     active && payload && payload.length ? (
                       <div className="bg-white dark:bg-slate-800 p-2 rounded shadow-lg border border-slate-200 dark:border-slate-700">
-                        <p className="text-sm font-medium">{`${payload[0].name}: ${payload[0].value} students`}</p>
+                        <p className="text-sm font-medium">
+                          {t("analytics.enrollments.tooltip")
+                            .replace("{name}", payload[0].name)
+                            .replace("{value}", payload[0].value)}
+                        </p>
                       </div>
                     ) : null
                   }
@@ -180,7 +189,7 @@ const StudentEnrollmentsPerCourse = ({ timeRange }) => {
           </div>
         ) : (
           <div className="h-[300px] flex items-center justify-center text-gray-500">
-            No enrollment data available.
+            {t("analytics.enrollments.empty")}
           </div>
         )}
 
@@ -205,7 +214,7 @@ const StudentEnrollmentsPerCourse = ({ timeRange }) => {
                   </span>
                   <span className="flex items-center">
                     <span className="mr-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {category.value} Enrollments
+                      {category.value} {t("instructor.common.enrollments") || "Enrollments"}
                     </span>
                     {isExpanded ? (
                       <ChevronUp className="h-5 w-5 text-gray-500" />
@@ -227,7 +236,11 @@ const StudentEnrollmentsPerCourse = ({ timeRange }) => {
                               content={({ active, payload }) =>
                                 active && payload && payload.length ? (
                                   <div className="bg-white dark:bg-slate-800 p-2 rounded shadow-lg border border-slate-200 dark:border-slate-700">
-                                    <p className="text-sm font-medium">{`${payload[0].name}: ${payload[0].value} students`}</p>
+                                    <p className="text-sm font-medium">
+                                      {t("analytics.enrollments.tooltip")
+                                        .replace("{name}", payload[0].name)
+                                        .replace("{value}", payload[0].value)}
+                                    </p>
                                   </div>
                                 ) : null
                               }
@@ -246,7 +259,7 @@ const StudentEnrollmentsPerCourse = ({ timeRange }) => {
                       </div>
                     ) : (
                       <div className="text-gray-500 text-center py-4">
-                        No courses available in this category.
+                        {t("analytics.enrollments.noCourses")}
                       </div>
                     )}
                   </div>
