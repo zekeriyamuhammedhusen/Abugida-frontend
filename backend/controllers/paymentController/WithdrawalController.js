@@ -119,11 +119,11 @@ export const getWithdrawalHistory = async (req, res) => {
 export const getInstructorBalance = async (req, res) => {
   try {
     const instructorId = new mongoose.Types.ObjectId(req.user._id);
-    const { startDate, endDate, range } = req.query;
+    const { startDate, endDate, range, debug } = req.query;
 
     const matchStage = { instructorId };
-    const effectiveRange = startDate && endDate ? null : (range || '30d');
-    const rangeStart = startDate && endDate ? null : resolveRange(effectiveRange);
+    const hasCustomRange = !!(range && range !== 'all');
+    const rangeStart = startDate && endDate ? null : hasCustomRange ? resolveRange(range) : null;
 
     if (startDate && endDate) {
       matchStage.createdAt = {
@@ -134,19 +134,9 @@ export const getInstructorBalance = async (req, res) => {
       matchStage.createdAt = { $gte: rangeStart };
     }
 
-    // Sum of instructor shares for ACTIVE courses only (align with dashboard earnings)
+    // Sum of instructor shares (all courses) within the requested period
     const incomeAgg = await Transaction.aggregate([
       { $match: matchStage },
-      {
-        $lookup: {
-          from: 'courses',
-          localField: 'courseId',
-          foreignField: '_id',
-          as: 'course'
-        }
-      },
-      { $unwind: { path: '$course', preserveNullAndEmptyArrays: false } },
-      { $match: { 'course.isActive': true } },
       {
         $group: {
           _id: null,
@@ -169,12 +159,28 @@ export const getInstructorBalance = async (req, res) => {
     ]);
     const totalWithdrawn = withdrawalsAgg[0]?.total || 0;
 
-    const balance = Math.max(0, totalActiveIncome - totalWithdrawn);
+    // Fallback to stored availableBalance when no transactions are found (legacy data)
+    const instructor = await User.findById(req.user._id).select('availableBalance');
+    const legacyAvailable = Number(instructor?.availableBalance || 0);
 
-    return res.status(200).json({
+    const earningsBase = totalActiveIncome > 0 ? totalActiveIncome : legacyAvailable;
+    const balance = Math.max(0, earningsBase - totalWithdrawn);
+
+    const payload = {
       message: 'Instructor balance retrieved successfully',
       balance: Number(balance.toFixed(2)),
-    });
+    };
+
+    if (debug === 'true') {
+      payload.debug = {
+        matchStage,
+        totalActiveIncome: Number(totalActiveIncome.toFixed(2)),
+        totalWithdrawn: Number(totalWithdrawn.toFixed(2)),
+        legacyAvailable: Number(legacyAvailable.toFixed(2)),
+      };
+    }
+
+    return res.status(200).json(payload);
   } catch (error) {
     console.error('Error retrieving instructor balance:', error.message);
     return res.status(500).json({ error: error.message });

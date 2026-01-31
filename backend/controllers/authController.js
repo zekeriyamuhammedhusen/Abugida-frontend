@@ -62,15 +62,21 @@ export const loginUser = async (req, res) => {
 
     // Email verification
     if (!user.isVerified) {
-      if (!otp) {
-        const generatedOtp = user.generateOTP();
+      // Admins and approvers can log in without OTP; mark them verified immediately.
+      if (user.role === 'admin' || user.role === 'approver') {
+        user.isVerified = true;
         await user.save();
-        await sendEmail(user.email, 'Your OTP Code', `Your OTP code is: ${generatedOtp}`);
-        return res.status(400).json({ message: "OTP required. Check your email." });
+      } else {
+        if (!otp) {
+          const generatedOtp = user.generateOTP();
+          await user.save();
+          await sendEmail(user.email, 'Your OTP Code', `Your OTP code is: ${generatedOtp}`);
+          return res.status(400).json({ message: "OTP required. Check your email." });
+        }
+        if (!user.verifyOTP(otp)) return res.status(400).json({ message: "Invalid or expired OTP" });
+        user.isVerified = true;
+        await user.save();
       }
-      if (!user.verifyOTP(otp)) return res.status(400).json({ message: "Invalid or expired OTP" });
-      user.isVerified = true;
-      await user.save();
     }
 
     // Instructor approval check

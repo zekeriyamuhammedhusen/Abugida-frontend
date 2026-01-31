@@ -1,4 +1,7 @@
 import User from '../../models/User.js';
+import ApprovalLog from '../../models/ApprovalLog.js';
+import Course from '../../models/Course.js';
+import Transaction from '../../models/Transaction.js';
 import mongoose from 'mongoose';
 import { sendEmail } from '../../Email Service/emailService.js'; 
 
@@ -232,6 +235,39 @@ export const unblockUser = async (req, res) => {
   }
 };
 
+// Platform-level stats for admin overview
+export const getPlatformStats = async (req, res) => {
+  try {
+    const [totalUsers, totalStudentsRaw, totalInstructors, totalAdmins, totalCourses, revenueAgg] = await Promise.all([
+      User.countDocuments(),
+      // Case-insensitive match to avoid stray capitalization or whitespace
+      User.countDocuments({ role: { $regex: /^student$/i } }),
+      User.countDocuments({ role: 'instructor' }),
+      User.countDocuments({ role: 'admin' }),
+      Course.countDocuments(),
+      Transaction.aggregate([{ $group: { _id: null, total: { $sum: '$amountPaid' } } }]),
+    ]);
+
+    // Fallback: if student count looks off, derive from totals
+    const derivedStudents = totalUsers - totalInstructors - totalAdmins;
+    const totalStudents = totalStudentsRaw > 0 ? totalStudentsRaw : Math.max(0, derivedStudents);
+
+    const totalRevenue = revenueAgg?.[0]?.total || 0;
+
+    return res.status(200).json({
+      totalUsers,
+      totalStudents,
+      totalInstructors,
+      totalAdmins,
+      totalCourses,
+      totalRevenue: Number(totalRevenue.toFixed(2)),
+    });
+  } catch (error) {
+    console.error('Error fetching platform stats:', error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 
 // Get single user by ID
 export const getUserById = async (req, res) => {
@@ -255,5 +291,93 @@ export const getUserById = async (req, res) => {
   } catch (error) {
     console.error("Error fetching user:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Create an approver account (admin only)
+export const createApprover = async (req, res) => {
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: 'Name, email, and password are required' });
+  }
+
+  try {
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: 'Email is already in use' });
+    }
+
+    const approver = await User.create({
+      name,
+      email,
+      password,
+      role: 'approver',
+      isApproved: true,
+      isVerified: true,
+      status: 'active',
+    });
+
+    return res.status(201).json({
+      message: 'Approver created successfully',
+      approver: {
+        _id: approver._id,
+        name: approver.name,
+        email: approver.email,
+        role: approver.role,
+        status: approver.status,
+      },
+    });
+  } catch (error) {
+    console.error('Error creating approver:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// List approval activity logs (admin only)
+export const listApprovalLogs = async (req, res) => {
+  try {
+    const logs = await ApprovalLog.find()
+      .sort({ createdAt: -1 })
+      .limit(200);
+
+    return res.status(200).json({ logs });
+  } catch (error) {
+    console.error('Error fetching approval logs:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// List approvers (admin only)
+export const listApprovers = async (req, res) => {
+  try {
+    const approvers = await User.find({ role: 'approver' })
+      .select('name email role status createdAt');
+    return res.status(200).json({ approvers });
+  } catch (error) {
+    console.error('Error fetching approvers:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Delete an approver (admin only)
+export const deleteApprover = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const approver = await User.findById(id);
+
+    if (!approver) {
+      return res.status(404).json({ message: 'Approver not found' });
+    }
+
+    if (approver.role !== 'approver') {
+      return res.status(400).json({ message: 'User is not an approver' });
+    }
+
+    await User.findByIdAndDelete(id);
+    return res.status(200).json({ message: 'Approver deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting approver:', error);
+    return res.status(500).json({ message: 'Server error' });
   }
 };

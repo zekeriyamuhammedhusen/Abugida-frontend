@@ -31,10 +31,12 @@ router.get('/:instructorId/courses/progress', getInstructorCoursesWithProgress);
 router.get('/:instructorId/course/:courseId/average-progress', getCourseAverageProgress);
 router.get('/instructor/:instructorId/courses', getInstructorCourses);
 
+// Admin/all-courses listing; placed before generic :id route to avoid conflicts
+router.get('/all', getAllCourses);
+
  router.route('/:id')
   .get(getCourseById)
   .put(protect, instructor, upload.single('thumbnail'), updateCourse)
   .delete(protect, instructor, deleteCourse);
-router.get('/courses', getAllCourses,);
 
 export default router;

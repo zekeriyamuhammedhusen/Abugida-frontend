@@ -41,6 +41,41 @@ export const adminAuth = async (req, res, next) => {
 };
 
 // ---------------------------
+// Approver authentication
+// ---------------------------
+export const approverAuth = async (req, res, next) => {
+  try {
+    let token;
+
+    if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    } else if (req.headers.authorization) {
+      token = req.headers.authorization.replace('Bearer ', '');
+    }
+
+    if (!token) {
+      console.warn('approverAuth: no token provided');
+      return res.status(401).json({ message: 'No token provided.' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) return res.status(401).json({ message: 'User not found' });
+
+    if (user.blocked) return res.status(403).json({ message: "Your account has been blocked." });
+
+    if (user.role !== 'approver') return res.status(403).json({ message: 'Access denied. Approvers only.' });
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error("Approver Auth Error:", error);
+    res.status(401).json({ message: 'Unauthorized. Invalid token.' });
+  }
+};
+
+// ---------------------------
 // Instructor authentication
 // ---------------------------
 export const instructor = (req, res, next) => {
