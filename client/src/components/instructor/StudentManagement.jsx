@@ -86,7 +86,7 @@ const StudentManagement = () => {
         }
       } catch (error) {
         console.error("Error fetching students:", error);
-        toast.error("Error fetching student progress data.");
+        toast.error("no student inrolled");
         setStudents([]);
       }
     };

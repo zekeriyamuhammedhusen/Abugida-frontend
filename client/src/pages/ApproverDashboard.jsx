@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 
 const ApproverDashboard = () => {
+  const navigate = useNavigate();
   const { logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const { user } = useAuth();
@@ -34,12 +36,10 @@ const ApproverDashboard = () => {
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [approvedCount, setApprovedCount] = useState(0);
   const [approved, setApproved] = useState([]);
   const [approvedLoading, setApprovedLoading] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState(null);
   const pendingRef = useRef(null);
-  const approvedRef = useRef(null);
 
   const fetchPending = async () => {
     try {
@@ -53,21 +53,11 @@ const ApproverDashboard = () => {
     }
   };
 
-  const fetchApprovedCount = async () => {
-    try {
-      const res = await api.get("/api/approver/instructors/approved-count");
-      setApprovedCount(res.data?.approvedCount || 0);
-    } catch (error) {
-      setApprovedCount(0);
-    }
-  };
-
   const fetchApproved = async () => {
     try {
       setApprovedLoading(true);
       const res = await api.get("/api/approver/instructors/approved");
       setApproved(res.data?.approved || []);
-      setApprovedCount(res.data?.approved?.length || 0);
     } catch (error) {
       setApproved([]);
     } finally {
@@ -87,6 +77,8 @@ const ApproverDashboard = () => {
       [u.name, u.email].filter(Boolean).some((v) => v.toLowerCase().includes(term))
     );
   }, [pending, search]);
+
+  const totalApplicants = pending.length + approved.length;
 
   const today = useMemo(() => new Date().toLocaleDateString(), []);
   const languageOptions = [
@@ -125,7 +117,7 @@ const ApproverDashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="flex min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 h-[100vh] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 transition-transform duration-300 ${
@@ -155,7 +147,7 @@ const ApproverDashboard = () => {
                     .map((n) => n[0])
                     .join("")
                     .toUpperCase()
-                : "AP"}
+                : "RG"}
             </div>
             <div className="overflow-hidden">
               <div className="text-sm font-medium truncate">
@@ -179,7 +171,7 @@ const ApproverDashboard = () => {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-auto h-[100vh]">
-        <header className="sticky top-0 z-40 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-950/70 backdrop-blur">
+        <header className="sticky top-0 z-40 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/80 backdrop-blur shadow-sm">
           <div className="px-6 py-4 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("approver.header.title")}</h1>
@@ -242,14 +234,14 @@ const ApproverDashboard = () => {
         <main className="p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card
-            className="border-slate-200/60 dark:border-slate-800/60 cursor-pointer"
+            className="border-slate-200/70 dark:border-slate-800/70 cursor-pointer shadow-sm hover:shadow-md transition-all bg-white/95 dark:bg-slate-900/95"
             onClick={() => pendingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
           >
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("approver.stats.pending")}</p>
-                  <p className="text-2xl font-semibold mt-1">{approved.length}</p>
+                  <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{pending.length}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                   <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -259,14 +251,14 @@ const ApproverDashboard = () => {
           </Card>
 
           <Card
-            className="border-slate-200/60 dark:border-slate-800/60 cursor-pointer"
-            onClick={() => approvedRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="border-slate-200/70 dark:border-slate-800/70 cursor-pointer shadow-sm hover:shadow-md transition-all bg-white/95 dark:bg-slate-900/95"
+            onClick={() => navigate("/approver-applicants")}
           >
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("approver.stats.total")}</p>
-                  <p className="text-2xl font-semibold mt-1">{pending.length}</p>
+                  <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{totalApplicants}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -275,7 +267,7 @@ const ApproverDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200/60 dark:border-slate-800/60">
+          <Card className="border-slate-200/70 dark:border-slate-800/70 shadow-sm bg-white/95 dark:bg-slate-900/95">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>

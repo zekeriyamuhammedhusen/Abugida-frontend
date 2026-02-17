@@ -12,6 +12,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ApproverDashboard from "./pages/ApproverDashboard";
+import ApproverApplicantsPage from "./pages/ApproverApplicantsPage";
 import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -235,6 +236,14 @@ const App = () => {
           element={
             <RequireApprover>
               <ApproverDashboard />
+            </RequireApprover>
+          }
+        />
+        <Route
+          path="/approver-applicants"
+          element={
+            <RequireApprover>
+              <ApproverApplicantsPage />
             </RequireApprover>
           }
         />

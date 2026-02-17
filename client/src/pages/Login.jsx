@@ -82,8 +82,8 @@ const handleSubmit = async (e) => {
             // Check for blocked or pending approval status in the response message
             if (message?.includes("blocked")) {
               errorMessage = "Your account has been blocked by the admin.";
-            } else if (message?.includes("approved")) {
-              errorMessage = "Your account is pending approval by an admin.";
+            } else if (message?.includes("approved") || message?.includes("rigesteral")) {
+              errorMessage = "Your account is pending approval by a rigesteral.";
             } else if (message?.includes("not verified")) {
               errorMessage = "Account not verified. Please check your email.";
             } else {

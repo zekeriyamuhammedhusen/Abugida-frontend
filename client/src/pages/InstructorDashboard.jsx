@@ -146,7 +146,20 @@ const InstructorDashboard = () => {
         return;
       }
       console.error("[DEBUG] Fetch error:", error);
-      toast.error("Failed to load course data");
+      const serverMessage = (
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        ""
+      ).toLowerCase();
+
+      const isMissingCourseMessage =
+        serverMessage.includes("course not found") ||
+        serverMessage.includes("no courses found");
+
+      if (!isMissingCourseMessage) {
+        toast.error("Failed to load course data");
+      }
       setCourses([]);
       setStats([]);
     } finally {

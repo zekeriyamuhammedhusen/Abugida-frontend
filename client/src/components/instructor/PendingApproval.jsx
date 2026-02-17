@@ -27,7 +27,7 @@ const PendingApproval = () => {
             
             <h1 className="text-2xl font-bold mb-2">Application Under Review</h1>
             <p className="text-muted-foreground mb-6">
-              Your instructor application has been submitted and is currently being reviewed by our team.
+              Your instructor application has been submitted and is currently being reviewed by our rigesteral team.
             </p>
             
             <div className="space-y-1 mb-6">

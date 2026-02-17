@@ -33,7 +33,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 207 96% 48%;
  
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     /* Sidebar Variables */
     --sidebar-background: 220 25% 97%;
@@ -47,7 +47,7 @@
   }
  
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 224 50% 7%;
     --foreground: 210 40% 98%;
  
     --card: 222.2 84% 4.9%;
@@ -94,17 +94,48 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background-image:
+      radial-gradient(circle at top left, hsl(var(--primary) / 0.08), transparent 34%),
+      radial-gradient(circle at 85% 12%, hsl(var(--primary) / 0.05), transparent 30%);
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl;
+    @apply bg-white/90 dark:bg-slate-900/85 border border-slate-200/80 dark:border-slate-800/80 rounded-xl shadow-sm backdrop-blur;
   }
   
   .glass-input {
-    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800;
+    @apply bg-white/90 dark:bg-slate-900/85 border border-slate-200/80 dark:border-slate-800/80 shadow-sm;
   }
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.22);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.35);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.35);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+  background-clip: content-box;
 }
 
 /* Animation utilities */
