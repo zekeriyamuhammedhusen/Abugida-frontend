@@ -81,7 +81,7 @@ export const loginUser = async (req, res) => {
 
     // Instructor approval check
     if (user.role === "instructor" && !user.isApproved) {
-      return res.status(403).json({ message: "Pending approval by admin" });
+      return res.status(403).json({ message: "Pending approval by rigesteral" });
     }
 
     // Generate JWT token
