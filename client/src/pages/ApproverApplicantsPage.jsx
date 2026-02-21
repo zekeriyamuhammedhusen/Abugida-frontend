@@ -33,7 +33,7 @@ const ApproverApplicantsPage = () => {
         setPending(pendingRes.data?.pending || []);
         setApproved(approvedRes.data?.approved || []);
       } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to load applicants");
+        toast.error(error.response?.data?.message || t("approver.applicants.error.load"));
       } finally {
         setLoading(false);
       }
@@ -74,7 +74,7 @@ const ApproverApplicantsPage = () => {
             <Logo />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">{t("approver.stats.total")}</h1>
-              <p className="text-sm text-muted-foreground">Manage and search all applicants</p>
+              <p className="text-sm text-muted-foreground">{t("approver.applicants.subtitle")}</p>
             </div>
           </div>
 
@@ -82,7 +82,7 @@ const ApproverApplicantsPage = () => {
             <ThemeToggle />
             <Button variant="outline" onClick={() => navigate("/approver-dashboard")}> 
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              {t("approver.applicants.back")}
             </Button>
           </div>
         </div>
@@ -95,10 +95,10 @@ const ApproverApplicantsPage = () => {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-abugida-600" />
-                  Applicant List
+                  {t("approver.applicants.listTitle")}
                 </CardTitle>
                 <CardDescription>
-                  {filteredApplicants.length} of {applicants.length} applicants
+                  {filteredApplicants.length} / {applicants.length} {t("approver.applicants.countLabel")}
                 </CardDescription>
               </div>
 
@@ -108,7 +108,7 @@ const ApproverApplicantsPage = () => {
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by name, email, expertise"
+                    placeholder={t("approver.applicants.searchPlaceholder")}
                     className="pl-9"
                   />
                 </div>
@@ -118,9 +118,9 @@ const ApproverApplicantsPage = () => {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="h-10 rounded-md border border-input bg-background/90 px-3 text-sm shadow-sm"
                 >
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
+                  <option value="all">{t("approver.filter.all")}</option>
+                  <option value="pending">{t("approver.filter.pending")}</option>
+                  <option value="approved">{t("approver.filter.approved")}</option>
                 </select>
               </div>
             </div>
@@ -131,24 +131,24 @@ const ApproverApplicantsPage = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Expertise</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Submitted</TableHead>
+                    <TableHead>{t("approver.table.name")}</TableHead>
+                    <TableHead>{t("approver.table.email")}</TableHead>
+                    <TableHead>{t("approver.table.expertise")}</TableHead>
+                    <TableHead>{t("approver.table.status")}</TableHead>
+                    <TableHead>{t("approver.table.submitted")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
-                        Loading applicants...
+                        {t("approver.applicants.loading")}
                       </TableCell>
                     </TableRow>
                   ) : filteredApplicants.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
-                        No applicants found.
+                        {t("approver.applicants.empty")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -165,7 +165,9 @@ const ApproverApplicantsPage = () => {
                                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                             }`}
                           >
-                            {applicant.status}
+                            {applicant.status === "approved"
+                              ? t("approver.filter.approved")
+                              : t("approver.filter.pending")}
                           </span>
                         </TableCell>
                         <TableCell>{new Date(applicant.createdAt).toLocaleDateString()}</TableCell>
