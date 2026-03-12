@@ -3,14 +3,16 @@ import {
   addQuizQuestion,
   updateQuizQuestion,
   deleteQuizQuestion,
-  getQuizQuestionsByLesson
+  getQuizQuestionsByLesson,
+  replaceQuizQuestionsForLesson
 } from '../../controllers/Instructor-controller/quizController.js';
 import { protect, instructor } from '../../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.route('/:lessonId/questions')
-  .post(protect, instructor, addQuizQuestion);
+  .post(protect, instructor, addQuizQuestion)
+  .put(protect, instructor, replaceQuizQuestionsForLesson);
 
 router.route('/questions/:questionId')
   .put(protect, instructor, updateQuizQuestion)

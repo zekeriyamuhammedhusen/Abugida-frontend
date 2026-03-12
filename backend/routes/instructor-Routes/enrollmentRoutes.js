@@ -1,6 +1,7 @@
 import express from 'express';
 import { enrollStudent, checkEnrollment,getEnrolledCourses } from '../../controllers/Instructor-controller/enrollmentController.js';
 import Enrollment from '../../models/Enrollment.js';
+import Progress from '../../models/Progress.js';
 
 const router = express.Router();
 
@@ -13,7 +14,15 @@ router.get('/check', async (req, res) => {
   
     try {
       const enrollment = await Enrollment.findOne({ studentId, courseId });
-      res.json({ isEnrolled: !!enrollment });
+      const progress = await Progress.findOne({ studentId, courseId });
+      const hasLockedQuiz = !!progress?.quizAttempts?.some(
+        (entry) => entry?.locked && entry?.repurchaseRequired
+      );
+
+      res.json({
+        isEnrolled: !!enrollment,
+        repurchaseRequired: hasLockedQuiz,
+      });
     } catch (error) {
       console.error("Enrollment check error:", error);
       res.status(500).json({ error: "Server error checking enrollment" });

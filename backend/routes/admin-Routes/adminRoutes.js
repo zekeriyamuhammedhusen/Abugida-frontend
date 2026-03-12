@@ -4,6 +4,7 @@ import {
   listActiveInstructors,
   listAllUsers,
   getUsersByRole,
+  updateUserRole,
   blockUser,
   unblockUser,
   getUserById,
@@ -12,6 +13,7 @@ import {
   listApprovalLogs,
   listApprovers,
   deleteApprover,
+  deleteUser,
 } from "../../controllers/admin-conroller/adminController.js";
 import { adminAuth } from "../../middleware/authMiddleware.js";
 
@@ -23,6 +25,8 @@ router.get("/active-instructors", adminAuth, listActiveInstructors);
 
 router.get("/all-users", adminAuth, listAllUsers);
 router.get("/role/:role", adminAuth, getUsersByRole);
+router.put("/users/:id/role", adminAuth, updateUserRole);
+router.delete("/users/:id", adminAuth, deleteUser);
 router.post("/approvers", adminAuth, createApprover);
 router.get("/approvers", adminAuth, listApprovers);
 router.delete("/approvers/:id", adminAuth, deleteApprover);

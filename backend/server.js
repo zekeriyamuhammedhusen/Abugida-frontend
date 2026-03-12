@@ -169,15 +169,36 @@ app.use("/api/translate", translationRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: "Server error", error: err.message });
+  const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  res.status(statusCode).json({
+    message: err?.message || "Server error",
+    error: process.env.NODE_ENV === "production" ? undefined : err?.stack,
+  });
 });
 io.on("connection", (socket) => {
   // console.log("User connected:", socket.id);
 });
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+const DEFAULT_PORT = Number(process.env.PORT) || 5000;
+
+const startServer = (port) => {
+  server.listen(port, () => {
+    console.log(`🚀 Server running on http://localhost:${port}`);
+  });
+};
+
+server.on("error", (error) => {
+  if (error?.code === "EADDRINUSE") {
+    const nextPort = (Number(server.address()?.port) || DEFAULT_PORT) + 1;
+    console.warn(`⚠️ Port ${nextPort - 1} is in use. Retrying on ${nextPort}...`);
+    setTimeout(() => startServer(nextPort), 250);
+    return;
+  }
+
+  console.error("Server failed to start:", error);
+  process.exit(1);
 });
+
+startServer(DEFAULT_PORT);
 
 export { io };
 

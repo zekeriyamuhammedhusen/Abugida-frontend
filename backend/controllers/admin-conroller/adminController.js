@@ -144,6 +144,64 @@ export const getUsersByRole = async (req, res) => {
   }
 };
 
+export const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    const allowedRoles = ['student', 'instructor', 'admin', 'approver'];
+    if (!role || !allowedRoles.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role provided' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: 'Admin role cannot be updated' });
+    }
+
+    if (req.user && req.user._id.toString() === id && role !== 'admin') {
+      return res.status(400).json({ message: 'You cannot remove your own admin role' });
+    }
+
+    user.role = role;
+
+    if (role === 'instructor') {
+      if (user.blocked) {
+        user.status = 'blocked';
+      } else if (!user.isApproved) {
+        user.status = 'pending';
+      }
+    } else if (!user.blocked) {
+      user.isApproved = true;
+      user.status = 'active';
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: 'User role updated successfully',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+      },
+    });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 
 
 
@@ -379,5 +437,36 @@ export const deleteApprover = async (req, res) => {
   } catch (error) {
     console.error('Error deleting approver:', error);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Delete any user account (admin only)
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    const targetUser = await User.findById(id);
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (req.user && String(req.user._id) === String(id)) {
+      return res.status(400).json({ message: "You cannot delete your own account" });
+    }
+
+    if (targetUser.role === "admin") {
+      return res.status(403).json({ message: "Admin accounts cannot be deleted" });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    return res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };

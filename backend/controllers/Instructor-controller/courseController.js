@@ -17,6 +17,10 @@ function containsBannedContent(text) {
   return bannedWords.some(word => text.toLowerCase().includes(word));
 }
 
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export const checkImageForNSFW = async (imageUrl) => {
   try {
     const response = await axios.get('https://api.sightengine.com/1.0/check.json', {
@@ -61,11 +65,29 @@ export const checkImageForNSFW = async (imageUrl) => {
 
 export const createCourse = asyncHandler(async (req, res) => {
   const { title, description, category, level, price, requirements } = req.body;
+  const normalizedTitle = String(title || "").trim();
+
+  if (!normalizedTitle) {
+    return res.status(400).json({ message: "Course title is required." });
+  }
+
   if (containsBannedContent(title) || containsBannedContent(description)) {
     return res.status(400).json({ message: "Inappropriate content is not allowed." });
   }
+
+  const duplicateCourse = await Course.findOne({
+    instructor: req.user._id,
+    title: { $regex: new RegExp(`^${escapeRegex(normalizedTitle)}$`, "i") },
+  });
+
+  if (duplicateCourse) {
+    return res.status(409).json({
+      message: "You already created a course with this title.",
+    });
+  }
+
   const course = new Course({
-    title,
+    title: normalizedTitle,
     description,
     instructor: req.user._id,
     category,
@@ -272,8 +294,23 @@ export const updateCourse = asyncHandler(async (req, res) => {
   }
 
   const { title, description, category, level, price, requirements, published } = req.body;
+  const normalizedTitle = typeof title === 'string' ? title.trim() : undefined;
 
-  course.title = title || course.title;
+  if (normalizedTitle && normalizedTitle.toLowerCase() !== String(course.title || '').trim().toLowerCase()) {
+    const duplicateCourse = await Course.findOne({
+      _id: { $ne: course._id },
+      instructor: req.user._id,
+      title: { $regex: new RegExp(`^${escapeRegex(normalizedTitle)}$`, 'i') },
+    });
+
+    if (duplicateCourse) {
+      return res.status(409).json({
+        message: 'You already created a course with this title.',
+      });
+    }
+  }
+
+  course.title = normalizedTitle || course.title;
   course.description = description || course.description;
   course.category = category || course.category;
   course.level = level || course.level;

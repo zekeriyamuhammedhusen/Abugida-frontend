@@ -4,13 +4,19 @@ import {
   getCompletedLessons, 
   getProgressData, 
   getAllStudentsProgress, 
-  getCourseProgressSummary 
+  getCourseProgressSummary,
+  getQuizAttemptStatus,
+  recordQuizAttempt,
 } from '../../controllers/Instructor-controller/progressController.js';
 
 const router = express.Router();
 
 // Update student progress
 router.post('/', updateProgress);
+
+// Track quiz attempts and lock after max tries
+router.post('/quiz-attempt', recordQuizAttempt);
+router.get('/quiz-attempt/:studentId/:courseId/:lessonId', getQuizAttemptStatus);
 
 // Get completed lessons for a student in a course
 router.get('/:studentId/:courseId/completedLessons', getCompletedLessons);
