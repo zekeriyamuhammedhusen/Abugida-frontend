@@ -17,6 +17,13 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showAnswers, setShowAnswers] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [repurchaseRequired, setRepurchaseRequired] = useState(false);
+  const [attemptInfo, setAttemptInfo] = useState({
+    attempts: 0,
+    maxAttempts: 3,
+    attemptsLeft: 3,
+    locked: false,
+  });
   const [enrollmentLoading, setEnrollmentLoading] = useState(true);
 
   // Check enrollment status
@@ -25,6 +32,7 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
       try {
         const res = await api.get(`/api/enrollments/check?studentId=${studentId}&courseId=${courseId}`);
         setIsEnrolled(res.data?.isEnrolled || false);
+        setRepurchaseRequired(res.data?.repurchaseRequired || false);
       } catch (error) {
         console.error("Error checking enrollment:", error);
       } finally {
@@ -41,6 +49,23 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
 
   // Fetch quiz questions from the API
   useEffect(() => {
+    const fetchAttemptStatus = async () => {
+      if (!studentId || !courseId || !lesson_id) return;
+
+      try {
+        const response = await api.get(`/api/progress/quiz-attempt/${studentId}/${courseId}/${lesson_id}`);
+        setAttemptInfo({
+          attempts: response.data?.attempts || 0,
+          maxAttempts: response.data?.maxAttempts || 3,
+          attemptsLeft: response.data?.attemptsLeft ?? 3,
+          locked: !!response.data?.locked,
+        });
+        setRepurchaseRequired(!!response.data?.repurchaseRequired);
+      } catch (error) {
+        console.error("Failed to fetch quiz attempt status:", error);
+      }
+    };
+
     const fetchQuizQuestions = async () => {
       try {
         setIsLoading(true);
@@ -54,9 +79,11 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
     };
 
     fetchQuizQuestions();
-  }, [lesson_id]);
+    fetchAttemptStatus();
+  }, [lesson_id, studentId, courseId]);
 
   const resetQuiz = () => {
+    if (attemptInfo.locked || repurchaseRequired) return;
     setAnswers([]);
     setSubmitted(false);
     setScore(null);
@@ -129,6 +156,11 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
   };
 
   const handleSubmit = async () => {
+    if (attemptInfo.locked || repurchaseRequired) {
+      toast.error("You have used all quiz attempts. Please repurchase this course to continue.");
+      return;
+    }
+
     if (answers.length < questions.length) {
       toast.error("Please answer all questions before submitting");
       return;
@@ -142,8 +174,37 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
     const canShowAnswers = finalScore >= 50;
     setShowAnswers(canShowAnswers);
 
+    try {
+      const attemptResponse = await api.post(`/api/progress/quiz-attempt`, {
+        studentId,
+        courseId,
+        lessonId: lesson_id,
+        score: finalScore,
+      });
+
+      setAttemptInfo({
+        attempts: attemptResponse.data?.attempts || 0,
+        maxAttempts: attemptResponse.data?.maxAttempts || 3,
+        attemptsLeft: attemptResponse.data?.attemptsLeft ?? 0,
+        locked: !!attemptResponse.data?.locked,
+      });
+      setRepurchaseRequired(!!attemptResponse.data?.repurchaseRequired);
+
+      if (attemptResponse.data?.locked || attemptResponse.data?.repurchaseRequired) {
+        toast.error("You have used all 3 attempts. Repurchase is required to continue.");
+      }
+    } catch (error) {
+      if (error?.response?.status === 403) {
+        setAttemptInfo((prev) => ({ ...prev, locked: true, attemptsLeft: 0 }));
+        setRepurchaseRequired(true);
+        toast.error("You have used all 3 attempts. Repurchase is required to continue.");
+      } else {
+        toast.error("Failed to record quiz attempt");
+      }
+    }
+
     // Save progress and trigger onComplete if enrolled and score >= 50%
-    if (isEnrolled && canShowAnswers) {
+    if (isEnrolled && canShowAnswers && !repurchaseRequired) {
       const progressSaved = await saveProgress(finalScore);
       if (progressSaved) {
         onComplete(); // Trigger onComplete only if progress is saved successfully
@@ -204,6 +265,9 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
       {/* Quiz Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
         <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Quiz Assessment</h2>
+        <div className="text-xs sm:text-sm text-muted-foreground">
+          Attempts left: {attemptInfo.attemptsLeft}/{attemptInfo.maxAttempts}
+        </div>
         {!submitted && (
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
@@ -339,9 +403,13 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
           <Button
             onClick={handleSubmit}
             className="w-full py-4 sm:py-6 text-base sm:text-lg"
-            disabled={answers.length < questions.length}
+            disabled={answers.length < questions.length || attemptInfo.locked || repurchaseRequired}
           >
-            {answers.length < questions.length ? (
+            {attemptInfo.locked || repurchaseRequired ? (
+              <span className="text-xs sm:text-sm">
+                Attempts exhausted — repurchase required
+              </span>
+            ) : answers.length < questions.length ? (
               <span className="text-xs sm:text-sm">
                 Complete all questions to submit ({questions.length - answers.length} remaining)
               </span>
@@ -416,6 +484,14 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
                     size={16}
                     className={`ml-1 sm:ml-2 transition-transform ${showAnswers ? "rotate-90" : ""}`}
                   />
+                </Button>
+              ) : attemptInfo.locked || repurchaseRequired ? (
+                <Button
+                  variant="outline"
+                  className="h-10 sm:h-12"
+                  onClick={() => (window.location.href = `/courses/${courseId}`)}
+                >
+                  Repurchase Course
                 </Button>
               ) : (
                 <Button variant="outline" className="h-10 sm:h-12" onClick={resetQuiz}>

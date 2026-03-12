@@ -16,6 +16,7 @@ import api from "@/lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { toast } from "sonner";
 
 export const MessagesTab = () => {
   const { user } = useAuth();
@@ -43,8 +44,82 @@ export const MessagesTab = () => {
     return "";
   };
 
+  const getMessageText = (message) => {
+    if (!message) return "";
+    if (typeof message.text === "string") return message.text;
+    if (typeof message.message === "string") return message.message;
+    if (typeof message.content === "string") return message.content;
+    return "";
+  };
+
+  const currentUserId = String(user?._id || user?.id || "");
+
+  const getConversationId = (conversation) => {
+    if (!conversation) return "";
+    return conversation._id || conversation.id || conversation.conversationId || "";
+  };
+
+  const ensureInstructorConversations = async (instructorId) => {
+    if (!instructorId) return;
+
+    try {
+      const res = await api.get(`/api/courses/${instructorId}/courses/progress`);
+      const courses = Array.isArray(res?.data?.courses) ? res.data.courses : [];
+
+      const creationRequests = [];
+
+      courses.forEach((course) => {
+        const courseId = course?._id;
+        const enrolledStudents = Array.isArray(course?.enrolledStudents)
+          ? course.enrolledStudents
+          : [];
+
+        enrolledStudents.forEach((student) => {
+          const studentId =
+            student?.studentId?._id ||
+            student?.studentId ||
+            student?.id ||
+            null;
+
+          if (!studentId || !courseId) return;
+
+          creationRequests.push(
+            api.post(`/api/chat/conversations`, {
+              studentId,
+              instructorId,
+              courseId,
+            })
+          );
+        });
+      });
+
+      if (creationRequests.length > 0) {
+        await Promise.allSettled(creationRequests);
+      }
+    } catch (error) {
+      console.error("Failed to auto-create instructor conversations:", error);
+    }
+  };
+
+  const fetchMessagesByConversationId = async (conversationId) => {
+    if (!conversationId) return;
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/api/chat/messages/${conversationId}`);
+      const normalized = Array.isArray(response.data)
+        ? response.data.map(normalizeIncomingMessage)
+        : [];
+      setMessages(normalized);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const normalizeIncomingMessage = (message) => ({
     ...message,
+    text: getMessageText(message),
     senderId: message?.senderId || message?.sender?._id || message?.sender || "",
     sender: message?.sender || message?.senderId || message?.sender?._id || "",
     createdAt: message?.createdAt || new Date().toISOString(),
@@ -55,10 +130,18 @@ export const MessagesTab = () => {
     const fetchConversations = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get(`/api/chat/conversations/?userId=${user._id}`);
-        setConversations(response.data);
-        if (response.data.length > 0 && !selectedConversation) {
-          setSelectedConversation(response.data[0]);
+        if (!currentUserId) return;
+
+        const role = String(user?.role || "").toLowerCase();
+        if (role === "instructor") {
+          await ensureInstructorConversations(currentUserId);
+        }
+
+        const response = await api.get(`/api/chat/conversations/?userId=${currentUserId}`);
+        const fetchedConversations = Array.isArray(response.data) ? response.data : [];
+        setConversations(fetchedConversations);
+        if (fetchedConversations.length > 0 && !selectedConversation) {
+          setSelectedConversation(fetchedConversations[0]);
         }
       } catch (error) {
         console.error("Error fetching conversations:", error);
@@ -68,28 +151,36 @@ export const MessagesTab = () => {
     };
 
     if (user) fetchConversations();
-  }, [user]);
+  }, [user, currentUserId]);
 
   // Fetch messages
   useEffect(() => {
     if (selectedConversation) {
-      const fetchMessages = async () => {
-        try {
-          setIsLoading(true);
-          const response = await api.get(`/api/chat/messages/${selectedConversation._id}`);
-          const normalized = Array.isArray(response.data)
-            ? response.data.map(normalizeIncomingMessage)
-            : [];
-          setMessages(normalized);
-        } catch (error) {
-          console.error("Error fetching messages:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchMessages();
+      fetchMessagesByConversationId(getConversationId(selectedConversation));
     }
   }, [selectedConversation]);
+
+  useEffect(() => {
+    if (!conversations.length) {
+      setSelectedConversation(null);
+      return;
+    }
+
+    if (!selectedConversation) {
+      setSelectedConversation(conversations[0]);
+      return;
+    }
+
+    const stillExists = conversations.some(
+      (conversationItem) =>
+        String(getConversationId(conversationItem)) ===
+        String(getConversationId(selectedConversation))
+    );
+
+    if (!stillExists) {
+      setSelectedConversation(conversations[0]);
+    }
+  }, [conversations, selectedConversation]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -99,19 +190,39 @@ export const MessagesTab = () => {
   // Socket.io setup
   useEffect(() => {
     if (!socket || !selectedConversation) return;
+    const selectedConversationId = String(getConversationId(selectedConversation));
 
     const handleNewMessage = (message) => {
-      if (message?.conversationId === selectedConversation._id) {
+      if (String(message?.conversationId || "") === selectedConversationId) {
         const normalized = normalizeIncomingMessage(message);
         setMessages((prev) => [...prev, normalized]);
       }
     };
 
     const handleMessageUpdated = (updatedMessage) => {
-      const normalized = normalizeIncomingMessage(updatedMessage);
-      setMessages((prev) =>
-        prev.map((msg) => (msg._id === normalized._id ? normalized : msg))
-      );
+      if (!updatedMessage) return;
+
+      if (updatedMessage._id) {
+        const normalized = normalizeIncomingMessage(updatedMessage);
+        setMessages((prev) =>
+          prev.map((msg) => (msg._id === normalized._id ? normalized : msg))
+        );
+        return;
+      }
+
+      if (updatedMessage.messageId) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === updatedMessage.messageId
+              ? {
+                  ...msg,
+                  text: updatedMessage.newText ?? msg.text,
+                  updatedAt: new Date().toISOString(),
+                }
+              : msg
+          )
+        );
+      }
     };
 
     const handleMessageDeleted = ({ messageId }) => {
@@ -126,7 +237,7 @@ export const MessagesTab = () => {
     socket.on("messageUpdated", handleMessageUpdated);
     socket.on("messageDeleted", handleMessageDeleted);
     socket.on("onlineUsers", handleOnlineUsers);
-    socket.emit("joinConversation", selectedConversation._id);
+    socket.emit("joinConversation", selectedConversationId);
     socket.emit("getOnlineUsers");
 
     return () => {
@@ -134,19 +245,32 @@ export const MessagesTab = () => {
       socket.off("messageUpdated", handleMessageUpdated);
       socket.off("messageDeleted", handleMessageDeleted);
       socket.off("onlineUsers", handleOnlineUsers);
-      socket.emit("leaveConversation", selectedConversation._id);
+      socket.emit("leaveConversation", selectedConversationId);
     };
   }, [socket, selectedConversation]);
 
-  const handleSendMessage = async () => {
-    if ((!newMessage.trim() && !file) || isSending || !selectedConversation) return;
+  const handleSendMessage = async (event) => {
+    event?.preventDefault?.();
+
+    const conversationToUse = selectedConversation || conversations[0] || null;
+    const conversationId = getConversationId(conversationToUse);
+
+    if ((!newMessage.trim() && !file) || isSending) return;
+    if (!conversationId) {
+      toast.error(t("student.messages.selectConversation"));
+      return;
+    }
+
+    if (!selectedConversation && conversationToUse) {
+      setSelectedConversation(conversationToUse);
+    }
 
     const tempId = `temp-${Date.now()}`;
     const tempMessage = {
       _id: tempId,
-      conversationId: selectedConversation._id,
-      senderId: user._id,
-      sender: user._id,
+      conversationId,
+      senderId: currentUserId,
+      sender: currentUserId,
       text: newMessage,
       createdAt: new Date().toISOString(),
       isTemp: true,
@@ -160,8 +284,8 @@ export const MessagesTab = () => {
     try {
       setIsSending(true);
       const formData = new FormData();
-      formData.append("conversationId", selectedConversation._id);
-      formData.append("senderId", user._id);
+      formData.append("conversationId", conversationId);
+      formData.append("senderId", currentUserId);
       formData.append("text", tempMessage.text);
       if (file) formData.append("file", file);
 
@@ -172,7 +296,7 @@ export const MessagesTab = () => {
       const saved = {
         ...normalizeIncomingMessage(response.data),
         _id: response.data?._id || tempId,
-        conversationId: selectedConversation._id,
+        conversationId,
       };
 
       // Replace temp with saved
@@ -182,8 +306,11 @@ export const MessagesTab = () => {
 
       socket.emit("sendMessage", {
         ...saved,
-        conversationId: selectedConversation._id,
+        conversationId,
       });
+
+      // Re-sync to guarantee sender sees persisted message state.
+      await fetchMessagesByConversationId(conversationId);
     } catch (error) {
       console.error("Error sending message:", error);
       // Remove temp on error
@@ -204,11 +331,8 @@ export const MessagesTab = () => {
 
   const handleEditMessage = (message) => {
     setEditingMessageId(message._id);
-    setEditedMessageText(message.text);
+    setEditedMessageText(getMessageText(message));
   };
-const handleEdit = (messageId, newText) => {
-  socket.emit("updateMessage", { messageId, newText, conversationId });
-};
 
   const handleCancelEdit = () => {
     setEditingMessageId(null);
@@ -220,13 +344,15 @@ const handleEdit = (messageId, newText) => {
 
     try {
       const response = await api.put(`/api/chat/messages/${editingMessageId}`, { text: editedMessageText });
+      const normalizedUpdated = normalizeIncomingMessage(response.data);
 
       setMessages((prev) =>
-        prev.map((msg) => (msg._id === editingMessageId ? response.data : msg))
+        prev.map((msg) => (msg._id === editingMessageId ? normalizedUpdated : msg))
       );
 
       socket.emit("updateMessage", {
-        ...response.data,
+        messageId: editingMessageId,
+        newText: editedMessageText,
         conversationId: selectedConversation._id,
       });
 
@@ -528,8 +654,9 @@ const handleEdit = (messageId, newText) => {
                 ) : (
                   <div className="flex flex-col space-y-3">
                     {messages.map((msg) => {
-                      const senderId = getSenderId(msg);
-                      const isOwnMessage = senderId === user._id;
+                      const senderId = String(getSenderId(msg) || "");
+                      const isOwnMessage = senderId === currentUserId;
+                      const messageText = getMessageText(msg);
                       const timestamp = msg?.createdAt || msg?.updatedAt || new Date().toISOString();
 
                       return (
@@ -544,7 +671,7 @@ const handleEdit = (messageId, newText) => {
                           className={cn(
                             "max-w-[70%] px-4 py-2 rounded-lg",
                             isOwnMessage
-                              ? "bg-fidel-500 text-white rounded-tr-none"
+                              ? "bg-blue-600 text-white rounded-tr-none shadow-sm"
                               : "bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-tl-none"
                           )}
                         >
@@ -567,7 +694,7 @@ const handleEdit = (messageId, newText) => {
                                 </button>
                                 <button
                                   onClick={handleUpdateMessage}
-                                  className="px-2 py-1 text-xs rounded bg-white hover:bg-white/90 text-abugida-500"
+                                  className="px-2 py-1 text-xs rounded bg-white hover:bg-white/90 text-blue-600"
                                 >
                                   {t("student.messages.edit.save")}
                                 </button>
@@ -575,8 +702,8 @@ const handleEdit = (messageId, newText) => {
                             </div>
                           ) : (
                             <>
-                              {msg.text && (
-                                <p className="break-words">{msg.text}</p>
+                              {messageText && (
+                                <p className="break-words whitespace-pre-wrap">{messageText}</p>
                               )}
                               {renderFilePreview(msg)}
                               <p className="text-xs opacity-70 mt-1 text-right">
@@ -592,7 +719,7 @@ const handleEdit = (messageId, newText) => {
                           )}
                         </div>
                         {/* Edit/Delete Buttons (only for owner) */}
-                        {isOwnMessage && !editingMessageId && (
+                        {isOwnMessage && editingMessageId !== msg._id && (
                           <div className="flex gap-2 mt-1">
                             <button
                               onClick={() => handleEditMessage(msg)}
@@ -618,66 +745,6 @@ const handleEdit = (messageId, newText) => {
                 )}
               </div>
 
-              {/* Message Input */}
-              <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-                {file && (
-                  <div className="mb-2 flex items-center justify-between bg-slate-100 dark:bg-slate-700 rounded-lg p-2">
-                    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-                      {getFileIcon()}
-                      <span className="truncate max-w-xs">{file.name}</span>
-                    </div>
-                    <button
-                      onClick={() => setFile(null)}
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => fileInputRef.current.click()}
-                    className={cn(
-                      "p-2 rounded-full transition-colors",
-                      file
-                        ? "text-abugida-500"
-                        : "text-slate-500 hover:text-abugida-500"
-                    )}
-                  >
-                    <Paperclip />
-                  </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    onChange={handleFileSelect}
-                    accept="image/*, .pdf, .doc, .docx, .txt, video/*"
-                  />
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter") handleSendMessage();
-                    }}
-                    placeholder={t("student.messages.inputPlaceholder")}
-                    className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-fidel-500 dark:focus:ring-fidel-400 focus:border-transparent"
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={isSending || (!newMessage.trim() && !file)}
-                    className="text-white bg-fidel-500 hover:bg-fidel-600 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label={t("student.messages.inputPlaceholder")}
-                  >
-                    {isSending ? (
-                      <Loader2 className="animate-spin" />
-                    ) : (
-                      <Send className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-slate-500 dark:text-slate-400">
@@ -688,6 +755,78 @@ const handleEdit = (messageId, newText) => {
               )}
             </div>
           )}
+
+          {/* Message Input */}
+          <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+            {file && (
+              <div className="mb-2 flex items-center justify-between bg-slate-100 dark:bg-slate-700 rounded-lg p-2">
+                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                  {getFileIcon()}
+                  <span className="truncate max-w-xs">{file.name}</span>
+                </div>
+                <button
+                  onClick={() => setFile(null)}
+                  className="text-red-500 hover:text-red-600"
+                  disabled={!selectedConversation}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            <form className="flex items-center gap-2" onSubmit={handleSendMessage}>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!selectedConversation}
+                className={cn(
+                  "p-2 rounded-full transition-colors",
+                  file
+                    ? "text-abugida-500"
+                    : "text-slate-500 hover:text-abugida-500",
+                  !selectedConversation && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                <Paperclip />
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={handleFileSelect}
+                accept="image/*, .pdf, .doc, .docx, .txt, video/*"
+              />
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    // Allow form submit to handle Enter send consistently.
+                    return;
+                  }
+                }}
+                placeholder={
+                  selectedConversation
+                    ? t("student.messages.inputPlaceholder")
+                    : t("student.messages.selectConversation")
+                }
+                className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-fidel-500 dark:focus:ring-fidel-400 focus:border-transparent"
+              />
+              <button
+                type="submit"
+                disabled={isSending || (!newMessage.trim() && !file)}
+                className="inline-flex items-center justify-center min-w-10 h-10 text-white bg-blue-600 hover:bg-blue-700 px-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={t("student.messages.inputPlaceholder")}
+              >
+                {isSending ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Send size={18} className="text-white" strokeWidth={2.5} />
+                )}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

@@ -313,14 +313,37 @@ const CurriculumManager = ({
     event.target.value = "";
   };
 
-  const selectLesson = (moduleId, lessonId) => {
+  const selectLesson = async (moduleId, lessonId) => {
     setSelectedModule(moduleId);
     setSelectedLesson(lessonId);
     const lesson = modules
       .find((m) => m._id === moduleId)
       ?.lessons?.find((l) => l._id === lessonId);
     if (lesson?.type === "quiz") {
-      setCurrentQuizQuestions(lesson.quizQuestions || []);
+      try {
+        const response = await api.get(`/api/quizzes/${lessonId}/questions`);
+        const loadedQuestions = Array.isArray(response.data) ? response.data : [];
+        setCurrentQuizQuestions(loadedQuestions);
+        setModules((prevModules) =>
+          prevModules.map((module) =>
+            module._id === moduleId
+              ? {
+                  ...module,
+                  lessons: (module.lessons ?? []).map((moduleLesson) =>
+                    moduleLesson._id === lessonId
+                      ? { ...moduleLesson, quizQuestions: loadedQuestions }
+                      : moduleLesson
+                  ),
+                }
+              : module
+          )
+        );
+      } catch (error) {
+        setCurrentQuizQuestions([]);
+        toast.error(error.response?.data?.message || "Failed to load quiz questions");
+      }
+    } else {
+      setCurrentQuizQuestions([]);
     }
   };
 
@@ -372,21 +395,58 @@ const CurriculumManager = ({
                 videoUploads={videoUploads}
                 quizQuestions={currentQuizQuestions}
                 onQuizQuestionsChange={(questions) => {
+                  for (let questionIndex = 0; questionIndex < questions.length; questionIndex++) {
+                    const questionItem = questions[questionIndex];
+                    if (!questionItem?.question?.trim()) {
+                      toast.error(`Question ${questionIndex + 1} text is required`);
+                      return;
+                    }
+
+                    if (!Array.isArray(questionItem.options) || questionItem.options.length < 2) {
+                      toast.error(`Question ${questionIndex + 1} must have at least 2 options`);
+                      return;
+                    }
+
+                    const emptyOptionIndex = questionItem.options.findIndex(
+                      (optionItem) => !optionItem?.text?.trim()
+                    );
+                    if (emptyOptionIndex !== -1) {
+                      toast.error(
+                        `Question ${questionIndex + 1}, option ${emptyOptionIndex + 1} text is required`
+                      );
+                      return;
+                    }
+
+                    const correctCount = questionItem.options.filter((optionItem) => optionItem.isCorrect).length;
+                    if ((questionItem.type || "single") === "single" && correctCount !== 1) {
+                      toast.error(`Question ${questionIndex + 1} must have exactly 1 correct option`);
+                      return;
+                    }
+                    if ((questionItem.type || "single") === "multiple" && correctCount < 1) {
+                      toast.error(`Question ${questionIndex + 1} must have at least 1 correct option`);
+                      return;
+                    }
+                  }
+
                   setCurrentQuizQuestions(questions);
                   if (selectedLesson) {
-                    api.post(`/api/media/assign/${selectedLesson}`, {
-                      quizQuestions: questions.map((q) => ({
-                        question: q.question,
-                        options: q.options.map((opt) => ({
-                          text: opt.text,
-                          isCorrect: opt.isCorrect,
+                    api.put(`/api/quizzes/${selectedLesson}/questions`, {
+                      questions: questions.map((questionItem) => ({
+                        question: questionItem.question,
+                        options: questionItem.options.map((optionItem) => ({
+                          text: optionItem.text,
+                          isCorrect: optionItem.isCorrect,
                         })),
-                        type: q.type || "single",
-                        lesson: selectedLesson,
+                        type: questionItem.type || "single",
+                        points: questionItem.points || 1,
                       })),
                     }, {
                       headers: { "Content-Type": "application/json" },
-                    }).then(() => {
+                    }).then((response) => {
+                      const savedQuestions = Array.isArray(response.data)
+                        ? response.data
+                        : questions;
+                      setCurrentQuizQuestions(savedQuestions);
                       setModules((prevModules) =>
                         prevModules.map((module) =>
                           module.lessons?.some((lesson) => lesson._id === selectedLesson)
@@ -394,7 +454,7 @@ const CurriculumManager = ({
                                 ...module,
                                 lessons: module.lessons.map((lesson) =>
                                   lesson._id === selectedLesson
-                                    ? { ...lesson, quizQuestions: questions }
+                                    ? { ...lesson, quizQuestions: savedQuestions }
                                     : lesson
                                 ),
                               }
@@ -405,7 +465,6 @@ const CurriculumManager = ({
                     }).catch((error) => {
                       toast.error(error.response?.data?.message || "Failed to save quiz questions");
                     });
-                    updateLesson(selectedModule, selectedLesson, "quizQuestions", questions, { silent: true });
                   }
                 }}
                 onReplaceLessonClick={(moduleId, lessonId) => {

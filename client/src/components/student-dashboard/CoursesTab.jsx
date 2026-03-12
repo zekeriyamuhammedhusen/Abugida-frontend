@@ -102,15 +102,6 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
     return true;
   });
 
-  // Calculate summary statistics
-  const totalCourses = filteredCourses.length;
-  const completedCourses = filteredCourses.filter(
-    (c) => progressMap[c._id]?.progressPercentage === 100
-  ).length;
-  const inProgressCourses = filteredCourses.filter(
-    (c) => progressMap[c._id]?.progressPercentage < 100
-  ).length;
-
   const getLastAccessedDate = (lastAccessed) => {
     if (!lastAccessed) return "Never";
     try {
@@ -159,81 +150,9 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Progress Summary Card */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sticky top-4 h-fit">
-          <h3 className="font-semibold text-lg mb-4 text-slate-900 dark:text-white">
-            {t("student.courses.summaryTitle")}
-          </h3>
-
-          <div className="space-y-6">
-            {totalCourses > 0 ? (
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1 text-slate-600 dark:text-slate-300">
-                    <span>{t("student.courses.totalCourses")}</span>
-                    <span>{totalCourses}</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-slate-300 dark:bg-slate-600 rounded-full"
-                      style={{ width: "100%" }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-sm mb-1 text-slate-600 dark:text-slate-300">
-                    <span>{t("student.courses.completedCourses")}</span>
-                    <span>{completedCourses}</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 dark:bg-emerald-400 rounded-full"
-                      style={{
-                        width: `${
-                          totalCourses > 0
-                            ? (completedCourses / totalCourses) * 100
-                            : 0
-                        }%`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-sm mb-1 text-slate-600 dark:text-slate-300">
-                    <span>{t("student.courses.inProgressCourses")}</span>
-                    <span>{inProgressCourses}</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-amber-500 dark:bg-amber-400 rounded-full"
-                      style={{
-                        width: `${
-                          totalCourses > 0
-                            ? (inProgressCourses / totalCourses) * 100
-                            : 0
-                        }%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                {t("student.courses.empty.title")}
-              </p>
-            )}
-
-            <Button className="w-full" variant="outline">
-              {t("student.courses.viewAchievements")}
-            </Button>
-          </div>
-        </div>
-
+      <div>
         {/* Courses List */}
-        <div className="lg:col-span-2">
+        <div>
           <section className="mb-10">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
@@ -260,7 +179,7 @@ export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap,
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredCourses.map((course, i) => {
                   const progress = progressMap[course._id];
                   const isCompleted = progress?.progressPercentage === 100;

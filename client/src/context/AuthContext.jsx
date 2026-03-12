@@ -16,6 +16,24 @@ export const AuthProvider = ({ children }) => {
   // Session expiry matches server token (2 hours)
   const SESSION_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 
+  const clearClientSession = () => {
+    clearAutoLogoutTimer();
+    localStorage.removeItem("auth.loginAt");
+    localStorage.removeItem("auth.expiresAt");
+    setUser(null);
+  };
+
+  const isBrowserReload = () => {
+    if (typeof window === "undefined" || typeof performance === "undefined") return false;
+
+    const navigationEntries = performance.getEntriesByType?.("navigation");
+    if (navigationEntries?.length) {
+      return navigationEntries[0]?.type === "reload";
+    }
+
+    return performance.navigation?.type === 1;
+  };
+
   const clearAutoLogoutTimer = () => {
     if (autoLogoutTimer.current) {
       clearTimeout(autoLogoutTimer.current);
@@ -41,6 +59,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        if (isBrowserReload()) {
+          try {
+            await api.post(`/api/auth/logout`);
+          } catch (logoutError) {
+            // no-op: session may already be invalid server-side
+          }
+          clearClientSession();
+          return;
+        }
+
         const res = await api.get(`/api/auth/me`);
         setUser(res.data);
         // Restore or create session expiry
@@ -54,11 +82,7 @@ export const AuthProvider = ({ children }) => {
         }
         scheduleAutoLogout(expiresAt);
       } catch (err) {
-        setUser(null);
-        // Clear any stale session data
-        clearAutoLogoutTimer();
-        localStorage.removeItem("auth.loginAt");
-        localStorage.removeItem("auth.expiresAt");
+        clearClientSession();
       } finally {
         setLoading(false);
       }
@@ -100,22 +124,25 @@ export const AuthProvider = ({ children }) => {
   
 
   // Logout function
-  const logout = async () => {
+  const logout = async ({ silent = false, redirectToLogin = true } = {}) => {
     try {
       await api.post(`/api/auth/logout`);
-      setUser(null);
-      toast.success("Logged out successfully");
-      navigate("/login");
+      clearClientSession();
+      if (!silent) {
+        toast.success("Logged out successfully");
+      }
+      if (redirectToLogin) {
+        navigate("/login", { replace: true });
+      }
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Logout failed";
       setError(errorMsg);
-      toast.error(errorMsg);
+      if (!silent) {
+        toast.error(errorMsg);
+      }
     }
     finally {
-      // Always clear timer and storage on logout
-      clearAutoLogoutTimer();
-      localStorage.removeItem("auth.loginAt");
-      localStorage.removeItem("auth.expiresAt");
+      clearClientSession();
     }
   };
 

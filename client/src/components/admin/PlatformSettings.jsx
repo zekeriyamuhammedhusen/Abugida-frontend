@@ -35,7 +35,9 @@ const PlatformSettings = () => {
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
-  const isStudent = (user?.role || authUser?.role) === "student";
+  const userRole = (user?.role || authUser?.role || "").toLowerCase();
+  const isStudent = userRole === "student";
+  const isInstructorOrStudent = userRole === "student" || userRole === "instructor";
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -262,6 +264,7 @@ const PlatformSettings = () => {
                           value={formData.email}
                           onChange={handleInputChange}
                           placeholder="Your email address"
+                          readOnly={isInstructorOrStudent}
                         />
                       </div>
 

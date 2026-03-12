@@ -121,44 +121,44 @@ export const CourseHeader = ({
   };
 
   return (
-    <div className="bg-fidel-600 text-white py-12">
+    <div className="bg-gradient-to-br from-sky-700 via-blue-700 to-indigo-800 text-white py-12">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col md:flex-row gap-8 mt-8">
           <div className="flex-1">
             <div className="mb-4">
               <Link
                 to="/courses"
-                className="text-fidel-100 hover:text-white text-sm inline-flex items-center"
+                className="text-sky-100 hover:text-white text-sm inline-flex items-center transition-colors"
               >
                 <ChevronRight size={16} className="rotate-180 mr-1" />
                 Back to Courses
               </Link>
             </div>
 
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">{course.title}</h1>
-            <p className="text-fidel-100 mb-6">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">{course.title}</h1>
+            <p className="text-sky-50/95 mb-6 max-w-3xl leading-relaxed">
               {course.description?.split("\n\n")[0] || course.description}
             </p>
 
             <div className="flex flex-wrap gap-4 mb-6">
-              <div className="flex items-center">
+              <div className="flex items-center bg-white/10 border border-white/20 rounded-full px-3 py-1.5">
                 <Star size={18} className="text-yellow-300 fill-yellow-300 mr-1" />
                 <span className="font-medium">
                   {reviewStats.avgRating}
                 </span>
-                <span className="text-fidel-200 ml-1">
+                <span className="text-sky-100 ml-1">
                   ({reviewStats.totalReviews.toLocaleString()} ratings)
                 </span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center bg-white/10 border border-white/20 rounded-full px-3 py-1.5">
                 <Users size={18} className="mr-1" />
                 <span>{studentCount.toLocaleString()} students</span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center bg-white/10 border border-white/20 rounded-full px-3 py-1.5">
                 <Clock size={18} className="mr-1" />
                 <span>{course.totalDuration}</span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center bg-white/10 border border-white/20 rounded-full px-3 py-1.5">
                 <BookOpen size={18} className="mr-1" />
                 <span>{total} lessons</span>
               </div>
@@ -175,7 +175,7 @@ export const CourseHeader = ({
               </div>
               <div>
                 <div className="font-medium">Created by {instructorName}</div>
-                <div className="text-sm text-fidel-200">
+                <div className="text-sm text-sky-100">
                   Last updated:{" "}
                   {new Date(course.updatedAt || course.createdAt).toLocaleDateString(
                     "en-US",
@@ -188,7 +188,7 @@ export const CourseHeader = ({
 
           {!isEnrolled && (
             <div className="md:w-96">
-              <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-xl">
+              <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-xl border border-slate-200/80 dark:border-slate-800">
                 <img
                   src={course?.thumbnail?.url || "/default-course-thumb.jpg"}
                   alt={course?.title || "Course thumbnail"}

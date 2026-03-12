@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ const categories = [
   "Business",
   "Marketing",
   "Data Science",
+  "Machine Learning",
   "Psychology",
   "Finance",
   "Design",
@@ -63,6 +65,7 @@ const courseFormSchema = z.object({
 
 const CourseForm = ({ courseId, setCourseId, setActiveTab, setModules }) => {
   const { t } = useLanguage();
+  const [isSaving, setIsSaving] = useState(false);
   const form = useForm({
     resolver: zodResolver(courseFormSchema),
     defaultValues: {
@@ -77,6 +80,9 @@ const CourseForm = ({ courseId, setCourseId, setActiveTab, setModules }) => {
   });
 
   const onSubmit = async (values) => {
+    if (isSaving) return;
+    setIsSaving(true);
+
     try {
       const formData = new FormData();
       Object.entries(values).forEach(([key, value]) => {
@@ -108,6 +114,8 @@ const CourseForm = ({ courseId, setCourseId, setActiveTab, setModules }) => {
       setActiveTab("curriculum");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to save course");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -330,8 +338,8 @@ FormControl>
               )}
             />
             <div className="flex justify-end mt-8">
-              <Button type="submit" size="lg">
-                {t("instructor.create.button.continue")}
+              <Button type="submit" size="lg" disabled={isSaving}>
+                {isSaving ? "Please wait..." : t("instructor.create.button.continue")}
               </Button>
             </div>
           </div>

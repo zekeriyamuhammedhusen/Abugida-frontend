@@ -60,12 +60,14 @@ const StudentManagement = () => {
               course.enrolledStudents.forEach((student) => {
                 students.push({
                   id: student.studentId,
+                  courseId: course._id,
                   name: student.name,
                   email: student.email,
                   course: course.title,
                   progress: student.progressPercentage || 0,
-                  enrolledAt: student.enrolledAt || "Unknown",
-                  lastActive: student.lastActive || "Not available", // Fallback
+                  enrolledAt: student.enrolledAt || student.enrollmentDate || null,
+                  enrollmentDate: student.enrolledAt || student.enrollmentDate || null,
+                  lastActive: student.lastActive || student.lastSeen || student.updatedAt || null,
                   completedLessons: student.completedLessons || [], // For activity log simulation
                   activityLog: student.activityLog || [], // Empty unless provided by API
                   progressHistory: student.progressHistory || [], // Empty unless provided by API

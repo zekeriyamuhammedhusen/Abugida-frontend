@@ -43,6 +43,57 @@ const StudentDetails = ({ selectedStudent, onBack, user }) => {
     }
   }, [selectedStudent]);
 
+  const getNormalizedDate = (value) => {
+    if (!value) return null;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const resolveEnrollmentDate = () => {
+    const date =
+      getNormalizedDate(selectedStudent?.enrolledAt) ||
+      getNormalizedDate(selectedStudent?.enrollmentDate) ||
+      getNormalizedDate(selectedStudent?.joinedAt) ||
+      null;
+    return date;
+  };
+
+  const resolveLastActiveDate = () => {
+    const directDate =
+      getNormalizedDate(selectedStudent?.lastActive) ||
+      getNormalizedDate(selectedStudent?.lastSeen) ||
+      getNormalizedDate(selectedStudent?.updatedAt) ||
+      null;
+
+    if (directDate) return directDate;
+
+    const activityDates = Array.isArray(selectedStudent?.activityLog)
+      ? selectedStudent.activityLog
+          .map((a) => getNormalizedDate(a?.date))
+          .filter(Boolean)
+      : [];
+
+    const progressDates = Array.isArray(selectedStudent?.progressHistory)
+      ? selectedStudent.progressHistory
+          .map((p) => getNormalizedDate(p?.date))
+          .filter(Boolean)
+      : [];
+
+    const allDates = [...activityDates, ...progressDates];
+    if (!allDates.length) return null;
+
+    return allDates.sort((a, b) => b.getTime() - a.getTime())[0];
+  };
+
+  const enrollmentDate = resolveEnrollmentDate();
+  const lastActiveDate = resolveLastActiveDate();
+  const enrollmentDateDisplay = enrollmentDate
+    ? format(enrollmentDate, "yyyy-MM-dd")
+    : "Not available";
+  const lastActiveDisplay = lastActiveDate
+    ? format(lastActiveDate, "yyyy-MM-dd HH:mm")
+    : (selectedStudent?.lastActive || "Not available");
+
   // Download PDF report
   const handleDownloadReport = () => {
     const doc = new jsPDF();
@@ -52,8 +103,8 @@ const StudentDetails = ({ selectedStudent, onBack, user }) => {
     doc.text(`Email: ${selectedStudent.email}`, 20, 30);
     doc.text(`Course: ${selectedStudent.course}`, 20, 40);
     doc.text(`Progress: ${selectedStudent.progress}%`, 20, 50);
-    doc.text(`Last Active: ${selectedStudent.lastActive}`, 20, 60);
-    doc.text(`Enrollment Date: ${selectedStudent.enrollmentDate}`, 20, 70);
+    doc.text(`Last Active: ${lastActiveDisplay}`, 20, 60);
+    doc.text(`Enrollment Date: ${enrollmentDateDisplay}`, 20, 70);
     doc.save(`${selectedStudent.name}_progress_report.pdf`);
     toast.success("Report downloaded successfully!");
   };
@@ -66,11 +117,33 @@ const StudentDetails = ({ selectedStudent, onBack, user }) => {
     }
 
     try {
-      await api.post('/api/messages/send', {
+      if (!selectedStudent?.id || !user?._id || !selectedStudent?.courseId) {
+        toast.error("Missing student, instructor, or course information.");
+        return;
+      }
+
+      const conversationRes = await api.post('/api/chat/conversations', {
         studentId: selectedStudent.id,
-        senderId: user._id,
-        message,
+        instructorId: user._id,
+        courseId: selectedStudent.courseId,
       });
+
+      const conversationId =
+        conversationRes?.data?._id ||
+        conversationRes?.data?.id ||
+        conversationRes?.data?.conversationId;
+
+      if (!conversationId) {
+        toast.error("Could not create conversation.");
+        return;
+      }
+
+      await api.post('/api/chat/messages', {
+        conversationId,
+        senderId: user._id,
+        text: message.trim(),
+      });
+
       toast.success(`Message sent to ${selectedStudent.name}!`);
       setMessage("");
     } catch (error) {
@@ -135,9 +208,7 @@ const StudentDetails = ({ selectedStudent, onBack, user }) => {
 
                 <p>
   Joined: <span className="font-medium">
-    {selectedStudent.enrolledAt && !isNaN(new Date(selectedStudent.enrolledAt).getTime())
-      ? format(new Date(selectedStudent.enrolledAt), 'yyyy-MM-dd') 
-      : 'Invalid Date'}
+    {enrollmentDateDisplay}
   </span>
 </p>
 
@@ -146,7 +217,7 @@ const StudentDetails = ({ selectedStudent, onBack, user }) => {
 
                 <p className="flex items-center justify-center">
                   <Clock size={14} className="mr-1 text-muted-foreground" />
-                  Last active {selectedStudent.lastActive}
+                  Last active {lastActiveDisplay}
                 </p>
               </div>
               <Button

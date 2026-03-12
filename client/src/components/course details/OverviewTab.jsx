@@ -68,21 +68,21 @@ export const OverviewTab = ({ course, total }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 space-y-8">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-          <h3 className="text-xl font-semibold mb-4">About This Course</h3>
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-7">
+          <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">About This Course</h3>
           <div className="prose dark:prose-invert max-w-none">
-            <p>{course.description}</p>
+            <p className="text-slate-700 dark:text-slate-300 leading-7">{course.description}</p>
           </div>
         </div>
 
         {course.whatYouWillLearn && (
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-            <h3 className="text-xl font-semibold mb-4">What You'll Learn</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-7">
+            <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">What You'll Learn</h3>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {course.whatYouWillLearn.map((item, index) => (
                 <li key={index} className="flex items-start">
                   <Check size={18} className="mr-2 text-green-500 mt-0.5 shrink-0" />
-                  <span>{item}</span>
+                  <span className="text-slate-700 dark:text-slate-300">{item}</span>
                 </li>
               ))}
             </ul>
@@ -90,13 +90,13 @@ export const OverviewTab = ({ course, total }) => {
         )}
 
         {course.requirements && (
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-            <h3 className="text-xl font-semibold mb-4">Requirements</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-7">
+            <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">Requirements</h3>
             <ul className="space-y-2">
               {course.requirements.map((item, index) => (
                 <li key={index} className="flex items-start">
                   <ChevronRight size={18} className="mr-2 text-fidel-500 mt-0.5" />
-                  <span>{item}</span>
+                  <span className="text-slate-700 dark:text-slate-300">{item}</span>
                 </li>
               ))}
             </ul>
@@ -106,7 +106,7 @@ export const OverviewTab = ({ course, total }) => {
 
       <div>
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sticky top-4">
-          <h3 className="font-semibold mb-4">Course Details</h3>
+          <h3 className="font-semibold mb-4 text-slate-900 dark:text-white">Course Details</h3>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Level</span>

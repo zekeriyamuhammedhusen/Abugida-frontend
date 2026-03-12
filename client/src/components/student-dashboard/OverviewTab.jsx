@@ -118,33 +118,38 @@ export const OverviewTab = ({ courses: propCourses, progressMap: propProgressMap
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Welcome banner */}
-      <div className="glass-card p-6 relative overflow-hidden">
-        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-fidel-100 dark:bg-fidel-900/20 rounded-full opacity-70 dark:opacity-30 -z-10"></div>
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700/70 bg-gradient-to-br from-sky-50 via-white to-emerald-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 p-6 md:p-7 shadow-sm">
+        <div className="absolute -right-20 -top-16 h-56 w-56 rounded-full bg-sky-300/20 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-emerald-300/20 blur-3xl" />
+
         <div className="relative z-10">
-          <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
             {t("student.overview.welcome")}, {user?.name || t("student.sidebar.namePlaceholder") }!
           </h2>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-slate-600 dark:text-slate-300 mt-2 max-w-2xl">
             {t("student.overview.subtitle")}
           </p>
-          <div className="mt-4 flex flex-wrap gap-4">
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 shadow-sm">
-              <p className="text-sm text-muted-foreground">{t("student.overview.completed")}</p>
-              <p className="text-2xl font-semibold text-slate-900 dark:text-white">
+
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+            <div className="rounded-xl border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-950/20 px-4 py-3 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{t("student.overview.completed")}</p>
+              <p className="text-2xl font-semibold text-emerald-900 dark:text-emerald-100 mt-1">
                 {completedCourses}
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 shadow-sm">
-              <p className="text-sm text-muted-foreground">{t("student.overview.inProgress")}</p>
-              <p className="text-2xl font-semibold text-slate-900 dark:text-white">
+
+            <div className="rounded-xl border border-sky-200/70 dark:border-sky-900/40 bg-sky-50/80 dark:bg-sky-950/20 px-4 py-3 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-sky-700 dark:text-sky-300">{t("student.overview.inProgress")}</p>
+              <p className="text-2xl font-semibold text-sky-900 dark:text-sky-100 mt-1">
                 {inProgressCourses}
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 shadow-sm">
-              <p className="text-sm text-muted-foreground">{t("student.overview.upcoming")}</p>
-              <p className="text-2xl font-semibold text-slate-900 dark:text-white">
+
+            <div className="rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/80 dark:bg-amber-950/20 px-4 py-3 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-amber-700 dark:text-amber-300">{t("student.overview.upcoming")}</p>
+              <p className="text-2xl font-semibold text-amber-900 dark:text-amber-100 mt-1">
                 {upcomingCourses}
               </p>
             </div>
@@ -153,17 +158,29 @@ export const OverviewTab = ({ courses: propCourses, progressMap: propProgressMap
       </div>
 
       {/* Continue learning */}
-      <section>
-        <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">
-          {t("student.overview.continue")}
-        </h3>
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            {t("student.overview.continue")}
+          </h3>
+          <span className="text-xs px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            {continueLearningCourses.length} active
+          </span>
+        </div>
+
+        {error && !isLoading && (
+          <div className="rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 p-3 text-sm text-rose-700 dark:text-rose-300">
+            {error}
+          </div>
+        )}
+
         {isLoading ? (
-          <div className="flex justify-center items-center h-32">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 h-36 flex justify-center items-center">
             <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
           </div>
         ) : continueLearningCourses.length === 0 ? (
-          <div className="glass-card p-4 text-center">
-            <p className="text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/60 p-6 text-center">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
               {t("student.overview.none")}
             </p>
           </div>
@@ -175,37 +192,46 @@ export const OverviewTab = ({ courses: propCourses, progressMap: propProgressMap
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.1 }}
-                className="glass-card p-4 hover:shadow-md transition-shadow duration-200"
+                className="group rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className="flex items-start">
-                  <div className="flex-1">
-                    <h4 className="font-medium text-slate-900 dark:text-white">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-slate-900 dark:text-white truncate">
                       {course.title}
                     </h4>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                       {t("student.overview.lastAccessed")}: {" "}
                       {getLastAccessedDate(progressMap[course._id]?.lastAccessed)}
                     </p>
-                    <div className="mt-3 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          "h-full rounded-full",
-                          progressMap[course._id]?.progressPercentage > 50
-                            ? "bg-blue-500"
-                            : "bg-purple-500"
-                        )}
-                        style={{
-                          width: `${progressMap[course._id]?.progressPercentage || 0}%`,
-                        }}
-                      ></div>
-                    </div>
-                    <div className="mt-2 flex justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        {progressMap[course._id]?.progressPercentage || 0}% {t("student.common.complete")}
-                      </span>
-                      <span className="font-medium text-abugida-500">{t("student.overview.continue")}</span>
-                    </div>
                   </div>
+                  <span className="text-[11px] font-medium px-2 py-1 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300 shrink-0">
+                    {progressMap[course._id]?.progressPercentage || 0}%
+                  </span>
+                </div>
+
+                <div className="mt-4 h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      progressMap[course._id]?.progressPercentage >= 75
+                        ? "bg-emerald-500"
+                        : progressMap[course._id]?.progressPercentage >= 35
+                        ? "bg-sky-500"
+                        : "bg-amber-500"
+                    )}
+                    style={{
+                      width: `${progressMap[course._id]?.progressPercentage || 0}%`,
+                    }}
+                  ></div>
+                </div>
+
+                <div className="mt-3 flex justify-between text-xs">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {progressMap[course._id]?.progressPercentage || 0}% {t("student.common.complete")}
+                  </span>
+                  <span className="font-semibold text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors">
+                    {t("student.overview.continue")}
+                  </span>
                 </div>
               </motion.div>
             ))}

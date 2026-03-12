@@ -56,6 +56,26 @@ const MultipleChoiceQuiz = ({ initialQuestions = [], onChange, lessonId }) => {
         ]
   );
 
+    useEffect(() => {
+      if (Array.isArray(initialQuestions) && initialQuestions.length > 0) {
+        setQuestions(initialQuestions);
+        return;
+      }
+
+      setQuestions([
+        {
+          question: "",
+          options: [
+            { text: "", isCorrect: false },
+            { text: "", isCorrect: false },
+            { text: "", isCorrect: false },
+            { text: "", isCorrect: false },
+          ],
+          type: "single",
+        },
+      ]);
+    }, [lessonId, initialQuestions]);
+
   const addQuestion = () => {
     const newQuestions = [
       ...questions,
@@ -498,6 +518,7 @@ const LessonEditor = ({
           variant="outline"
           onClick={async () => {
             const updates = [];
+            let quizChanged = false;
             if (draftTitle !== lesson.title) {
               updates.push(updateLesson(selectedModule, selectedLesson, 'title', draftTitle, { silent: true }));
             }
@@ -507,17 +528,15 @@ const LessonEditor = ({
             if (lesson.type === 'quiz') {
               const original = lesson.quizQuestions || [];
               if (JSON.stringify(quizDraft) !== JSON.stringify(original)) {
-                updates.push(updateLesson(selectedModule, selectedLesson, 'quizQuestions', quizDraft, { silent: true }));
+                quizChanged = true;
+                onQuizQuestionsChange?.(quizDraft);
               }
             }
-            if (updates.length === 0) {
+            if (updates.length === 0 && !quizChanged) {
               toast.info('No changes to save');
               return;
             }
             await Promise.all(updates);
-            if (lesson.type === 'quiz') {
-              onQuizQuestionsChange?.(quizDraft);
-            }
             toast.success('Lesson saved');
           }}
         >

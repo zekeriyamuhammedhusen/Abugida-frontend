@@ -174,7 +174,7 @@ export const CourseDetails = () => {
     : course.instructor || 'Unknown Instructor';
 
   return (
-    <div className="min-h-screen flex flex-col dark:bg-slate-950">
+    <div className="min-h-screen flex flex-col bg-slate-50/60 dark:bg-slate-950">
       <CourseHeader 
         course={course}
         instructorName={instructorName}
@@ -184,13 +184,13 @@ export const CourseDetails = () => {
         freeVideoLessons={freeVideoLessons}
       />
 
-      <div className="container px-4 md:px-6 py-12">
+      <div className="container px-4 md:px-6 py-10 md:py-12">
         <Tabs defaultValue="content">
-          <TabsList className="mb-8">
-            <TabsTrigger value="content">Course Content</TabsTrigger>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews</TabsTrigger>
-            <TabsTrigger value="instructor">Instructor</TabsTrigger>
+          <TabsList className="mb-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1 rounded-xl h-auto">
+            <TabsTrigger className="text-slate-700 dark:text-slate-300 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:bg-slate-100 dark:data-[state=active]:bg-slate-800 rounded-lg" value="content">Course Content</TabsTrigger>
+            <TabsTrigger className="text-slate-700 dark:text-slate-300 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:bg-slate-100 dark:data-[state=active]:bg-slate-800 rounded-lg" value="overview">Overview</TabsTrigger>
+            <TabsTrigger className="text-slate-700 dark:text-slate-300 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:bg-slate-100 dark:data-[state=active]:bg-slate-800 rounded-lg" value="reviews">Reviews</TabsTrigger>
+            <TabsTrigger className="text-slate-700 dark:text-slate-300 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:bg-slate-100 dark:data-[state=active]:bg-slate-800 rounded-lg" value="instructor">Instructor</TabsTrigger>
           </TabsList>
 
           <TabsContent value="content">

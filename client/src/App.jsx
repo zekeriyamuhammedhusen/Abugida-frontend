@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation, useNavigationType } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
@@ -27,6 +27,7 @@ import {
 } from "./socket";
 import RequireAdmin from "./components/auth/RequireAdmin";
 import RequireApprover from "./components/auth/RequireApprover";
+import RequireAuth from "./components/auth/RequireAuth";
 import ForgotPassword from "./pages/ForgotPassword";
 import OTPVerification from "./pages/OTPVerification";
 import OTPSend from "./pages/OTPSend";
@@ -49,7 +50,9 @@ const MainLayout = ({ children }) => (
 
 const App = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     // Scroll to top on route load
@@ -75,6 +78,26 @@ const App = () => {
       disconnectSocket();
     };
   }, [navigate, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (navigationType !== "POP") return;
+
+    const path = location.pathname;
+    const isProtectedPath =
+      path === "/student-dashboard" ||
+      path === "/instructor-dashboard" ||
+      path === "/admin-dashboard" ||
+      path === "/approver-dashboard" ||
+      path === "/approver-applicants" ||
+      path === "/profile" ||
+      path.startsWith("/users/") ||
+      path.startsWith("/learn/");
+
+    if (!isProtectedPath) return;
+
+    logout({ silent: true, redirectToLogin: true });
+  }, [location.pathname, navigationType, user, logout]);
 
   return (
     <>
@@ -221,8 +244,22 @@ const App = () => {
         <Route path="/verify-payment/:tx_ref" element={<VerifyPayment />} />
 
         {/* Protected routes without layout */}
-        <Route path="/student-dashboard" element={<StudentDashboard />} />
-        <Route path="/instructor-dashboard" element={<InstructorDashboard />} />
+        <Route
+          path="/student-dashboard"
+          element={
+            <RequireAuth>
+              <StudentDashboard />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/instructor-dashboard"
+          element={
+            <RequireAuth>
+              <InstructorDashboard />
+            </RequireAuth>
+          }
+        />
         <Route
           path="/admin-dashboard"
           element={
@@ -247,9 +284,30 @@ const App = () => {
             </RequireApprover>
           }
         />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/users/:userId" element={<UserDetails />} />
-        <Route path="/learn/:courseId/lesson/:lessonId" element={<LessonPlayer />} />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <Profile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/users/:userId"
+          element={
+            <RequireAuth>
+              <UserDetails />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/learn/:courseId/lesson/:lessonId"
+          element={
+            <RequireAuth>
+              <LessonPlayer />
+            </RequireAuth>
+          }
+        />
       </Routes>
 
       <Toaster />

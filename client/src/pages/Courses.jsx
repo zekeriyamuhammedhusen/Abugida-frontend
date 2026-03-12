@@ -7,16 +7,30 @@ import api from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 
 const categoryDefs = [
-  { value: "All", key: "popular.category.all" },
-  { value: "Computer Science", key: "category.development" },
-  { value: "Programming", key: "category.development" },
-  { value: "Business", key: "category.business" },
-  { value: "Psychology", key: "popular.category.psychology" },
-  { value: "Finance", key: "category.finance" },
-  { value: "Design", key: "category.design" },
-  { value: "Languages", key: "popular.category.languages" },
-  { value: "Personal Development", key: "popular.category.all" },
+  { value: "all", key: "popular.category.all", label: "All" },
+  { value: "computer-science", key: "category.development", label: "Computer Science" },
+  { value: "programming", key: "category.development", label: "Programming" },
+  { value: "web-development", key: "analytics.categories.webDevelopment", label: "Web Development" },
+  { value: "business", key: "category.business", label: "Business" },
+  { value: "marketing", key: "popular.category.all", label: "Marketing" },
+  { value: "data-science", key: "popular.category.all", label: "Data Science" },
+  { value: "machine-learning", key: "analytics.categories.machineLearning", label: "Machine Learning" },
+  { value: "psychology", key: "popular.category.psychology", label: "Psychology" },
+  { value: "finance", key: "category.finance", label: "Finance" },
+  { value: "design", key: "category.design", label: "Design" },
+  { value: "languages", key: "popular.category.languages", label: "Languages" },
+  { value: "health-&-fitness", key: "popular.category.all", label: "Health & Fitness" },
+  { value: "mathematics", key: "popular.category.all", label: "Mathematics" },
+  { value: "photography", key: "popular.category.all", label: "Photography" },
+  { value: "music", key: "popular.category.all", label: "Music" },
+  { value: "other", key: "popular.category.all", label: "Other" },
 ];
+
+const normalizeCategory = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
 
 const levelDefs = [
   { value: "All Levels", key: "courses.level.all" },
@@ -31,7 +45,7 @@ const Courses = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLevel, setSelectedLevel] = useState("All Levels");
   const [sortBy, setSortBy] = useState("popular");
   const [sortDirection, setSortDirection] = useState("desc");
@@ -103,7 +117,8 @@ const Courses = () => {
           ? course.instructor.name.toLowerCase().includes(searchQuery.toLowerCase())
           : course.instructor.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesCategory =
-        selectedCategory === "All" || course.category === selectedCategory;
+        selectedCategory === "all" ||
+        normalizeCategory(course.category) === selectedCategory;
       const matchesLevel =
         selectedLevel === "All Levels" || course.level === selectedLevel;
 
@@ -208,11 +223,11 @@ const Courses = () => {
                   {t('courses.filters')}
                 </button>
 
-                {selectedCategory !== "All" && (
+                {selectedCategory !== "all" && (
                   <div className="px-3 py-1 bg-fidel-50 dark:bg-fidel-900/30 text-fidel-600 dark:text-fidel-400 rounded-full text-sm flex items-center gap-1">
-                    {t(categoryDefs.find(c => c.value === selectedCategory)?.key || 'popular.category.all')}
+                    {categoryDefs.find((categoryItem) => categoryItem.value === selectedCategory)?.label || t('popular.category.all')}
                     <button
-                      onClick={() => setSelectedCategory("All")}
+                      onClick={() => setSelectedCategory("all")}
                       className="ml-1 hover:text-fidel-800 dark:hover:text-fidel-300"
                     >
                       ×
@@ -275,7 +290,7 @@ const Courses = () => {
                           onChange={() => setSelectedCategory(category.value)}
                           className="mr-2 accent-fidel-500"
                         />
-                        <span className="text-sm text-slate-700 dark:text-slate-300">{t(category.key)}</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{category.label || t(category.key)}</span>
                       </label>
                     ))}
                   </div>

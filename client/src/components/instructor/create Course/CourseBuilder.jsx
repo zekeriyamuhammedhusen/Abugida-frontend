@@ -51,7 +51,7 @@ const InnerCourseBuilder = ({
   const handleReplaceWithQuiz = () => {
     if (!lessonToReplace) return;
     const { moduleId, lessonId } = lessonToReplace;
-    api.put(`/lessons/${lessonId}`, { type: "quiz" }).then(() => {
+    api.put(`/api/lessons/${lessonId}/convert`, { newType: "quiz" }).then(() => {
       setModules((prevModules) =>
         prevModules.map((module) =>
           module._id === moduleId

@@ -74,11 +74,11 @@ export const InstructorTab = ({ courseId, studentId }) => {
   const instructorBio = instructor?.bio || 'Expert instructor with years of experience';
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-      <h3 className="text-xl font-semibold mb-4">About the Instructor</h3>
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-7">
+      <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">About the Instructor</h3>
       <div className="flex items-start gap-4">
         <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-          <span className="text-xl font-medium">
+          <span className="text-xl font-semibold text-slate-700 dark:text-slate-200">
             {instructorName
               .split(' ')
               .map((n) => n[0])
@@ -86,20 +86,20 @@ export const InstructorTab = ({ courseId, studentId }) => {
           </span>
         </div>
         <div>
-          <h4 className="font-semibold">{instructorName}</h4>
-          <p className="text-muted-foreground text-sm mt-1">{instructorBio}</p>
+          <h4 className="font-semibold text-slate-900 dark:text-white">{instructorName}</h4>
+          <p className="text-slate-600 dark:text-slate-300 text-sm mt-1 leading-6">{instructorBio}</p>
 
           {isEnrolled && instructorEmail && (
             <>
               <a
                 href={`mailto:${instructorEmail}`}
-                className="inline-block mt-3 mr-3 px-4 py-2 bg-fidel-600 text-white text-sm rounded hover:bg-fidel-700 transition"
+                className="inline-block mt-3 mr-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Contact Instructor
               </a>
               <button
                 onClick={handleStartConversation}
-                className="inline-block mt-3 px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition"
+                className="inline-block mt-3 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors"
               >
                 Start Chat
               </button>
