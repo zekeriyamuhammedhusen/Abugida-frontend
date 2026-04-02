@@ -1,0 +1,502 @@
+
+import { useState, useRef } from "react";
+import { toast } from "sonner";
+import api from '@/lib/api';
+import { Button } from "@/components/ui/button";
+import { BookOpen, ListPlus } from "lucide-react";
+import ModuleEditor from "./ModuleEditor";
+import LessonEditor from "./LessonEditor";
+import { useCourse } from "./CourseProvider";
+
+
+const CurriculumManager = ({
+  modules,
+  setModules,
+  selectedModule,
+  setSelectedModule,
+  selectedLesson,
+  setSelectedLesson,
+  videoUploads,
+  setVideoUploads,
+  uploadProgress,
+  setUploadProgress,
+  currentQuizQuestions,
+  setCurrentQuizQuestions,
+}) => {
+  const { courseId, setModuleId, setLessonId } = useCourse();
+  const moduleFileInputRef = useRef(null);
+
+  const addModule = async () => {
+    if (!courseId) {
+      toast.error("Please create a course first.");
+      return;
+    }
+    try {
+      const moduleData = {
+        title: `Module ${modules.length + 1}`,
+        description: "",
+        courseId,
+      };
+      const response = await api.post("/api/modules", moduleData, {
+        headers: { "Content-Type": "application/json" },
+      });
+      const newModule = { ...response.data, lessons: [] };
+      setModules([...modules, newModule]);
+      setModuleId(newModule._id);
+      setSelectedModule(newModule._id);
+      toast.success("Module added successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to add module");
+    }
+  };
+
+  const updateModule = async (moduleId, field, value, { silent = false } = {}) => {
+    try {
+      await api.put(`/api/modules/${moduleId}`, { [field]: value });
+      setModules(
+        modules.map((module) =>
+          module._id === moduleId ? { ...module, [field]: value } : module
+        )
+      );
+      if (!silent) toast.success("Module updated successfully");
+    } catch (error) {
+      if (!silent) toast.error(error.response?.data?.message || "Failed to update module");
+    }
+  };
+
+  const moveModule = (moduleId, direction) => {
+    setModules((prevModules) => {
+      const index = prevModules.findIndex((m) => m._id === moduleId);
+      if (
+        (direction === "up" && index === 0) ||
+        (direction === "down" && index === prevModules.length - 1)
+      ) {
+        return prevModules;
+      }
+      const newModules = [...prevModules];
+      const swapWith = direction === "up" ? index - 1 : index + 1;
+      [newModules[index], newModules[swapWith]] = [newModules[swapWith], newModules[index]];
+      return newModules;
+    });
+  };
+
+  const deleteModule = async (moduleId) => {
+    try {
+      await api.delete(`/api/modules/${moduleId}`);
+      setModules(modules.filter((module) => module._id !== moduleId));
+      if (selectedModule === moduleId) {
+        setSelectedModule(null);
+        setSelectedLesson(null);
+      }
+      toast.success("Module deleted");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update module");
+    }
+  };
+
+  const addLesson = async (moduleId, type = "video") => {
+    if (!courseId) {
+      toast.error("Please create a course first.");
+      return;
+    }
+    try {
+      const response = await api.post("/api/lessons", {
+        title: `${type === "video" ? "Video" : "Quiz"} Lesson`,
+        type,
+        moduleId,
+        duration: type === "video" ? "0:00" : "15:00",
+        content: "",
+        free: false,
+      }, {
+        headers: { "Content-Type": "application/json" },
+      });
+      const newLesson = response.data;
+      setModules(
+        modules.map((module) =>
+          module._id === moduleId
+            ? { ...module, lessons: [...(module.lessons ?? []), newLesson] }
+            : module
+        )
+      );
+      setModuleId(moduleId);
+      setLessonId(newLesson._id);
+      setSelectedModule(moduleId);
+      setSelectedLesson(newLesson._id);
+      if (type === "quiz") {
+        setCurrentQuizQuestions([]);
+      }
+      toast.success(`${type === "video" ? "Video" : "Quiz"} lesson added`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to add lesson");
+    }
+  };
+
+  const updateLesson = async (moduleId, lessonId, field, value, { silent = false } = {}) => {
+    try {
+      await api.put(`/api/lessons/${lessonId}`, { [field]: value });
+      setModules(
+        modules.map((module) =>
+          module._id === moduleId
+            ? {
+                ...module,
+                lessons: (module.lessons ?? []).map((lesson) =>
+                  lesson._id === lessonId
+                    ? { ...lesson, [field]: value }
+                    : lesson
+                ),
+              }
+            : module
+        )
+      );
+      if (!silent) {
+        toast.success("Lesson updated successfully");
+      }
+    } catch (error) {
+      if (!silent) toast.error(error.response?.data?.message || "Failed to update lesson");
+    }
+  };
+
+  const moveLesson = (moduleId, lessonId, direction) => {
+    setModules((prevModules) =>
+      prevModules.map((module) => {
+        if (module._id !== moduleId) return module;
+        const lessons = [...(module.lessons ?? [])];
+        const idx = lessons.findIndex((l) => l._id === lessonId);
+        if (idx === -1) return module;
+        if (
+          (direction === "up" && idx === 0) ||
+          (direction === "down" && idx === lessons.length - 1)
+        ) {
+          return module;
+        }
+        const swapWith = direction === "up" ? idx - 1 : idx + 1;
+        [lessons[idx], lessons[swapWith]] = [lessons[swapWith], lessons[idx]];
+        return { ...module, lessons };
+      })
+    );
+  };
+
+  const deleteLesson = (moduleId, lessonId) => {
+    setModules((prevModules) =>
+      prevModules.map((module) => {
+        if (module._id !== moduleId) return module;
+        return {
+          ...module,
+          lessons: (module.lessons ?? []).filter(
+            (lesson) => lesson._id !== lessonId
+          ),
+        };
+      })
+    );
+    if (selectedModule === moduleId && selectedLesson === lessonId) {
+      setSelectedLesson(null);
+    }
+    toast.success("Lesson deleted");
+  };
+
+  const handleVideoUpload = async (file, moduleId, lessonId, progressCb) => {
+    try {
+      const formData = new FormData();
+        formData.append("video", file); // Ensure the field name is 'video'
+
+      setUploadProgress((prev) => ({ ...prev, [lessonId]: 0 }));
+
+      const uploadRes = await api.post("/api/media", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress((prev) => ({ ...prev, [lessonId]: percentCompleted }));
+          if (progressCb) progressCb(percentCompleted);
+        },
+      });
+
+      const videoData = uploadRes.data;
+      // Add to uploads as processing if no playback URL yet
+      setVideoUploads((prev) => [
+        ...prev,
+        {
+          id: videoData.id,
+          name: file.name,
+          thumbnail: videoData.thumbnail,
+          duration: videoData.duration,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+          status: videoData.url ? "complete" : "processing",
+        },
+      ]);
+
+      // Assign Cloudinary video directly (url is available immediately)
+      const assignVideoToLesson = async (url, thumbUrl) => {
+        const assignRes = await api.put(`/api/media/assign/${lessonId}`, {
+          videoId: videoData.id,
+          videoUrl: url,
+          thumbnailUrl: thumbUrl || videoData.thumbnail,
+          duration: videoData.duration,
+          videoPublicId: videoData.id,
+          thumbnailPublicId: (videoData.thumbnail || "")
+            .split("/")
+            .slice(-2)
+            .join("/")
+            .replace(/\.[^/.]+$/, ""),
+        }, {
+          headers: { "Content-Type": "application/json" },
+        });
+
+        setModules((prevModules) =>
+          prevModules.map((module) => {
+            if (module._id !== moduleId) return module;
+            return {
+              ...module,
+              lessons: (module.lessons ?? []).map((lesson) =>
+                lesson._id === lessonId
+                  ? {
+                      ...lesson,
+                      videoId: videoData.id,
+                      videoUrl: assignRes.data.lesson.video.url,
+                      thumbnailUrl: assignRes.data.lesson.video.thumbnailUrl,
+                      duration: assignRes.data.lesson.duration,
+                      status: "complete",
+                    }
+                  : lesson
+              ),
+            };
+          })
+        );
+
+        setVideoUploads((prev) =>
+          prev.map((v) => (v.id === videoData.id ? { ...v, status: "complete" } : v))
+        );
+
+        toast.success("Video uploaded and assigned successfully");
+      };
+
+      if (videoData.url) {
+        await assignVideoToLesson(videoData.url, videoData.thumbnail);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to upload video");
+      setUploadProgress((prev) => ({ ...prev, [lessonId]: 0 }));
+      if (progressCb) progressCb(0);
+      // Propagate error so caller (LessonEditor) can react and avoid false success toasts
+      throw error;
+    }
+  };
+
+  const handleModuleFileUpload = async (event) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const sortedFiles = Array.from(files).sort((a, b) => a.name.localeCompare(b.name));
+    const videoFiles = sortedFiles.filter((file) =>
+      file.type.startsWith("video/") || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
+    );
+
+    if (videoFiles.length !== sortedFiles.length) {
+      toast.warning(`${sortedFiles.length - videoFiles.length} non-video files were skipped`);
+    }
+    if (videoFiles.length === 0) {
+      toast.error("No valid video files selected");
+      return;
+    }
+
+    for (const file of videoFiles) {
+      await addLesson(selectedModule, "video");
+      const newLesson = modules
+        .find((m) => m._id === selectedModule)
+        ?.lessons?.slice(-1)[0];
+      if (newLesson) {
+        await handleVideoUpload(file, selectedModule, newLesson._id);
+      }
+    }
+
+    event.target.value = "";
+  };
+
+  const selectLesson = async (moduleId, lessonId) => {
+    setSelectedModule(moduleId);
+    setSelectedLesson(lessonId);
+    const lesson = modules
+      .find((m) => m._id === moduleId)
+      ?.lessons?.find((l) => l._id === lessonId);
+    if (lesson?.type === "quiz") {
+      try {
+        const response = await api.get(`/api/quizzes/${lessonId}/questions`);
+        const loadedQuestions = Array.isArray(response.data) ? response.data : [];
+        setCurrentQuizQuestions(loadedQuestions);
+        setModules((prevModules) =>
+          prevModules.map((module) =>
+            module._id === moduleId
+              ? {
+                  ...module,
+                  lessons: (module.lessons ?? []).map((moduleLesson) =>
+                    moduleLesson._id === lessonId
+                      ? { ...moduleLesson, quizQuestions: loadedQuestions }
+                      : moduleLesson
+                  ),
+                }
+              : module
+          )
+        );
+      } catch (error) {
+        setCurrentQuizQuestions([]);
+        toast.error(error.response?.data?.message || "Failed to load quiz questions");
+      }
+    } else {
+      setCurrentQuizQuestions([]);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium mb-4">Course Curriculum</h3>
+        <p className="text-sm text-muted-foreground mb-6">
+          Organize your course content into modules and lessons
+        </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-4 space-y-4">
+            {modules.map((module, moduleIndex) => (
+              <ModuleEditor
+                key={module._id}
+                module={module}
+                moduleIndex={moduleIndex}
+                updateModule={updateModule}
+                moveModule={moveModule}
+                deleteModule={deleteModule}
+                addLesson={addLesson}
+                selectLesson={selectLesson}
+                selectedLesson={selectedLesson}
+                onBulkUpload={() => moduleFileInputRef.current.click()}
+              />
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addModule}
+              className="w-full"
+              disabled={!courseId}
+            >
+              <ListPlus size={18} className="mr-2" />
+              Add Module
+            </Button>
+          </div>
+
+          <div className="lg:col-span-8">
+            {selectedModule !== null && selectedLesson !== null ? (
+              <LessonEditor
+                modules={modules}
+                selectedModule={selectedModule}
+                selectedLesson={selectedLesson}
+                updateLesson={updateLesson}
+                moveLesson={moveLesson}
+                deleteLesson={deleteLesson}
+                videoUploads={videoUploads}
+                quizQuestions={currentQuizQuestions}
+                onQuizQuestionsChange={(questions) => {
+                  for (let questionIndex = 0; questionIndex < questions.length; questionIndex++) {
+                    const questionItem = questions[questionIndex];
+                    if (!questionItem?.question?.trim()) {
+                      toast.error(`Question ${questionIndex + 1} text is required`);
+                      return;
+                    }
+
+                    if (!Array.isArray(questionItem.options) || questionItem.options.length < 2) {
+                      toast.error(`Question ${questionIndex + 1} must have at least 2 options`);
+                      return;
+                    }
+
+                    const emptyOptionIndex = questionItem.options.findIndex(
+                      (optionItem) => !optionItem?.text?.trim()
+                    );
+                    if (emptyOptionIndex !== -1) {
+                      toast.error(
+                        `Question ${questionIndex + 1}, option ${emptyOptionIndex + 1} text is required`
+                      );
+                      return;
+                    }
+
+                    const correctCount = questionItem.options.filter((optionItem) => optionItem.isCorrect).length;
+                    if ((questionItem.type || "single") === "single" && correctCount !== 1) {
+                      toast.error(`Question ${questionIndex + 1} must have exactly 1 correct option`);
+                      return;
+                    }
+                    if ((questionItem.type || "single") === "multiple" && correctCount < 1) {
+                      toast.error(`Question ${questionIndex + 1} must have at least 1 correct option`);
+                      return;
+                    }
+                  }
+
+                  setCurrentQuizQuestions(questions);
+                  if (selectedLesson) {
+                    api.put(`/api/quizzes/${selectedLesson}/questions`, {
+                      questions: questions.map((questionItem) => ({
+                        question: questionItem.question,
+                        options: questionItem.options.map((optionItem) => ({
+                          text: optionItem.text,
+                          isCorrect: optionItem.isCorrect,
+                        })),
+                        type: questionItem.type || "single",
+                        points: questionItem.points || 1,
+                      })),
+                    }, {
+                      headers: { "Content-Type": "application/json" },
+                    }).then((response) => {
+                      const savedQuestions = Array.isArray(response.data)
+                        ? response.data
+                        : questions;
+                      setCurrentQuizQuestions(savedQuestions);
+                      setModules((prevModules) =>
+                        prevModules.map((module) =>
+                          module.lessons?.some((lesson) => lesson._id === selectedLesson)
+                            ? {
+                                ...module,
+                                lessons: module.lessons.map((lesson) =>
+                                  lesson._id === selectedLesson
+                                    ? { ...lesson, quizQuestions: savedQuestions }
+                                    : lesson
+                                ),
+                              }
+                            : module
+                        )
+                      );
+                      toast.success("Quiz questions saved successfully");
+                    }).catch((error) => {
+                      toast.error(error.response?.data?.message || "Failed to save quiz questions");
+                    });
+                  }
+                }}
+                onReplaceLessonClick={(moduleId, lessonId) => {
+                  // Handled in CourseBuilder
+                }}
+                handleVideoUpload={handleVideoUpload}
+              />
+            ) : (
+              <div className="p-8 text-center border border-dashed rounded-lg">
+                <BookOpen
+                  size={40}
+                  className="mx-auto mb-4 text-muted-foreground"
+                />
+                <h3 className="font-medium mb-2">No Lesson Selected</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Select a lesson from the module list or create a new one
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <input
+        type="file"
+        ref={moduleFileInputRef}
+        className="hidden"
+        accept="video/*"
+        multiple
+        onChange={handleModuleFileUpload}
+      />
+    </div>
+  );
+};
+
+export default CurriculumManager;

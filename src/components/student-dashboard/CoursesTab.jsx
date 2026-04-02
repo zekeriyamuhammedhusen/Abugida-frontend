@@ -1,0 +1,276 @@
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { BookOpen, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import axios from "axios";
+import api from "@/lib/api";
+import { useAuth } from "../../context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from 'react-router-dom';
+import { useLanguage } from "@/context/LanguageContext";
+
+export const CoursesTab = ({ courses: propCourses, progressMap: propProgressMap, loading: propLoading, error: propError }) => {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const [courses, setCourses] = useState([]);
+  const [progressMap, setProgressMap] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const navigate = useNavigate();
+
+  // Fetch enrolled courses
+  useEffect(() => {
+    if (propCourses) {
+      setCourses(propCourses);
+      setIsLoading(!!propLoading);
+      setError(propError || null);
+      return;
+    }
+
+    const fetchCourses = async () => {
+      if (!user?._id) return;
+
+      setIsLoading(true);
+      try {
+        const response = await api.get(`/api/enrollments/${user._id}/courses`);
+        setCourses(response.data);
+      } catch (err) {
+        console.error("Failed to fetch enrolled courses:", err);
+        setError(err?.response?.data?.message || err?.message || "Failed to load courses");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [user, propCourses, propLoading, propError]);
+
+  // Fetch progress for all courses
+  useEffect(() => {
+    if (propProgressMap && Object.keys(propProgressMap).length) {
+      setProgressMap(propProgressMap);
+      setIsLoading(!!propLoading);
+      setError(propError || null);
+      return;
+    }
+
+    const fetchAllProgress = async () => {
+      if (!user?._id || courses.length === 0) return;
+
+      setIsLoading(true);
+      const updatedProgressMap = {};
+
+      try {
+        await Promise.all(
+          courses.map(async (course) => {
+            try {
+              const res = await api.get(`/api/progress/${user._id}/${course._id}`);
+              const data = res.data;
+              updatedProgressMap[course._id] = data;
+            } catch (err) {
+              console.error(`Progress fetch failed for course ${course._id}:`, err);
+              updatedProgressMap[course._id] = {
+                progressPercentage: 0,
+                completedLessons: [],
+                error: err instanceof Error ? err.message : "Failed to fetch progress",
+              };
+            }
+          })
+        );
+      } catch (err) {
+        console.error("Failed to fetch progress for courses:", err);
+        setError(err?.response?.data?.message || err?.message || "Failed to load progress");
+      } finally {
+        setProgressMap(updatedProgressMap);
+        setIsLoading(false);
+      }
+    };
+
+    fetchAllProgress();
+  }, [user, courses, propProgressMap, propLoading, propError]);
+
+  const filteredCourses = courses.filter((course) => {
+    const progress = progressMap[course._id];
+    if (!progress) return false;
+
+    if (activeFilter === "completed") {
+      return progress.progressPercentage === 100;
+    } else if (activeFilter === "in-progress") {
+      return progress.progressPercentage < 100;
+    }
+    return true;
+  });
+
+  const getLastAccessedDate = (lastAccessed) => {
+    if (!lastAccessed) return "Never";
+    try {
+      return new Date(lastAccessed).toLocaleDateString();
+    } catch {
+      return "Unknown";
+    }
+  };
+  const handleRedirect = (course, isCompleted) => {
+    if (isCompleted) {
+      navigate(`/get-certified/${course._id}/${user._id}`);
+    } else {
+      navigate(`/courses/${course._id}`);
+    }
+  };
+  
+  return (
+    <div className="px-4 py-6 sm:px-6 lg:px-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+            {t("student.courses.title")}
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            {t("student.courses.subtitle")}
+          </p>
+        </div>
+
+        <div className="mt-4 sm:mt-0 flex space-x-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+          {["all", "in-progress", "completed"].map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setActiveFilter(filter)}
+              className={cn(
+                "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                activeFilter === filter
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+              )}
+            >
+              {filter === "all" && t("student.courses.filter.all")}
+              {filter === "in-progress" && t("student.courses.filter.inProgress")}
+              {filter === "completed" && t("student.courses.filter.completed")}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        {/* Courses List */}
+        <div>
+          <section className="mb-10">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                {t("student.courses.enrolled")}
+              </h3>
+            </div>
+
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+              </div>
+            ) : filteredCourses.length === 0 ? (
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
+                <BookOpen className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
+                <h4 className="mt-4 text-lg font-medium text-slate-900 dark:text-white">
+                  {t("student.courses.empty.title")}
+                </h4>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  {activeFilter === "all"
+                    ? t("student.courses.empty.all")
+                    : activeFilter === "in-progress"
+                    ? t("student.courses.empty.inProgress")
+                    : t("student.courses.empty.completed")}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredCourses.map((course, i) => {
+                  const progress = progressMap[course._id];
+                  const isCompleted = progress?.progressPercentage === 100;
+                  const percentage = progress?.progressPercentage || 0;
+                  const total = progress?.totalLessons || 0;
+
+                  const totalLessons =
+                    course.modules?.reduce(
+                      (acc, module) => acc + (module.lessons?.length || 0),
+                      0
+                    ) || 0;
+                  const completedLessons =
+                    progress?.completedLessons?.length || 0;
+
+                  return (
+                    <motion.div
+                      key={course._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: i * 0.1 }}
+                      className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="h-40 bg-slate-200 dark:bg-slate-700 relative overflow-hidden">
+                        <img
+                          src={
+                            course.thumbnail?.url || "/placeholder-course.jpg"
+                          }
+                          alt={course.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.src = "/placeholder-course.jpg";
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-80" />
+                      </div>
+
+                      <div className="p-5">
+                        <div className="flex justify-between items-start mb-3">
+                          <h4 className="font-semibold text-slate-900 dark:text-white line-clamp-2">
+                            {course.title}
+                          </h4>
+                          
+                          {course.level && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 ml-2">
+                              {course.level}
+                            </span>
+                          )}
+                          
+                        </div>
+
+                        <div className="mb-4">
+                          <div className="flex justify-between text-sm mb-1 text-slate-600 dark:text-slate-300">
+                            <span>{Math.round(percentage)}% {t("student.common.complete")}</span>
+                            <span>
+                              {completedLessons}/{total} {t("student.courses.lessons")}
+                            </span>
+                          </div>
+                          <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all duration-300",
+                                isCompleted
+                                  ? "bg-emerald-500 dark:bg-emerald-400"
+                                  : "bg-blue-500 dark:bg-blue-400"
+                              )}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <Button onClick={() => handleRedirect(course, isCompleted)}>
+  {isCompleted ? t("student.courses.getCertificate") : t("student.courses.continue")}
+</Button>
+
+
+                        <div className="flex items-center text-sm text-slate-500 dark:text-slate-400 mt-2">
+                          <BookOpen className="h-4 w-4 mr-1.5" />
+                          <span>
+                            {t("student.courses.lastAccessed")}: {" "}
+                            {getLastAccessedDate(progress?.lastAccessed)}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+};
