@@ -18,7 +18,7 @@ import {
   FileText,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/components/ui/Separator";
 import UserAvatar from "@/components/layout/UserAvatar";
 import api from "@/lib/api";
 
