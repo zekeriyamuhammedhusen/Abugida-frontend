@@ -5,14 +5,12 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import io from 'socket.io-client';
  import { useAuth } from "../context/AuthContext"; // Adjust path as needed
 import axios from "axios";
 import { toast } from "sonner";
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from "../context/LanguageContext";
-
-const socket = io(import.meta.env.VITE_API_BASE_URL); 
+import { useSocket } from "../context/SocketContext";
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -23,6 +21,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { t } = useLanguage();
+  const socket = useSocket();
   
   useEffect(() => {
     if (searchParams.get('blocked') === 'true') {
@@ -59,7 +58,7 @@ const handleSubmit = async (e) => {
 
     console.log("Login response:", { userRole, isApproved, status });
 
-    socket.emit('userOnline', _id);
+    socket?.emit('userOnline', _id);
         if (status === "blocked") {
           toast.error("Your account has been blocked by the admin.");
           setIsLoading(false);

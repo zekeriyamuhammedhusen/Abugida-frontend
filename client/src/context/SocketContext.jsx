@@ -8,7 +8,12 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const newSocket = io(import.meta.env.VITE_API_URL, {
+    const socketBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+    if (!socketBaseUrl) {
+      return;
+    }
+
+    const newSocket = io(socketBaseUrl, {
       withCredentials: true,
     });
     setSocket(newSocket);
