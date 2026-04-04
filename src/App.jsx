@@ -50,7 +50,7 @@ const MainLayout = ({ children }) => (
 
 const App = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     // Scroll to top on route load
@@ -60,22 +60,26 @@ const App = () => {
     if (user && user._id) {
       connectSocket(user._id);
 
-      listenForForceLogout((data) => {
+      const stopListening = listenForForceLogout(async (data) => {
         toast.error(data.message || "You have been logged out");
-        // logout flow handled by AuthContext; navigate to login
         if (data.reason === "blocked") {
+          await logout({ silent: true, redirectToLogin: false });
           navigate("/login?blocked=true", { replace: true });
         } else {
+          await logout({ silent: true, redirectToLogin: false });
           navigate("/login", { replace: true });
         }
-        window.location.reload();
       });
+
+      return () => {
+        stopListening?.();
+      };
     }
 
     return () => {
       disconnectSocket();
     };
-  }, [navigate, user]);
+  }, [navigate, user, logout]);
 
   return (
     <>

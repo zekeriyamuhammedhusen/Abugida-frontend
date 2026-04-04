@@ -9,15 +9,21 @@ const socket = io(`${import.meta.env.VITE_API_BASE_URL}`, {
 export const connectSocket = (userId) => {
   if (!socket.connected) {
     socket.connect();
-    socket.emit('registerUser', userId);
+    socket.emit('userOnline', userId);
   }
 };
 
 export const listenForForceLogout = (callback) => {
-  socket.on('forceLogout', (data) => {
+  const handler = (data) => {
     console.log('Received force logout:', data.message);
     callback(data);
-  });
+  };
+
+  socket.on('forceLogout', handler);
+
+  return () => {
+    socket.off('forceLogout', handler);
+  };
 };
 
 export const disconnectSocket = () => {

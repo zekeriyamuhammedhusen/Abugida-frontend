@@ -23,13 +23,9 @@ api.interceptors.response.use(
         localStorage.removeItem('auth.expiresAt');
       } catch {}
 
-      // Avoid hard refresh loops when already on an auth page
+      // Notify the auth layer instead of forcing a full page reload.
       if (typeof window !== 'undefined') {
-        const path = window.location?.pathname || '';
-        const authPaths = ['/login', '/signup', '/register'];
-        if (!authPaths.includes(path)) {
-          window.location.assign('/login');
-        }
+        window.dispatchEvent(new CustomEvent('auth:session-expired', { detail: { status } }));
       }
     }
     return Promise.reject(error);

@@ -23,6 +23,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const handleSessionExpired = (message = "Session expired. Please log in again.") => {
+    clearClientSession();
+    setError(message);
+    toast.error(message);
+    navigate("/login", { replace: true });
+  };
+
   const clearAutoLogoutTimer = () => {
     if (autoLogoutTimer.current) {
       clearTimeout(autoLogoutTimer.current);
@@ -34,13 +41,11 @@ export const AuthProvider = ({ children }) => {
     clearAutoLogoutTimer();
     const remaining = expiresAtMs - Date.now();
     if (remaining <= 0) {
-      toast.error("Session expired. Please log in again.");
-      logout();
+      handleSessionExpired();
       return;
     }
     autoLogoutTimer.current = setTimeout(() => {
-      toast.error("Session expired. Please log in again.");
-      logout();
+      handleSessionExpired();
     }, remaining);
   };
 
@@ -68,6 +73,15 @@ export const AuthProvider = ({ children }) => {
     };
     initializeAuth();
     return () => clearAutoLogoutTimer();
+  }, []);
+
+  useEffect(() => {
+    const onSessionExpired = () => {
+      handleSessionExpired();
+    };
+
+    window.addEventListener("auth:session-expired", onSessionExpired);
+    return () => window.removeEventListener("auth:session-expired", onSessionExpired);
   }, []);
 
   const refreshUser = async () => {
