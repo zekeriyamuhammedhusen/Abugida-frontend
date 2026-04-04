@@ -23,17 +23,6 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const isBrowserReload = () => {
-    if (typeof window === "undefined" || typeof performance === "undefined") return false;
-
-    const navigationEntries = performance.getEntriesByType?.("navigation");
-    if (navigationEntries?.length) {
-      return navigationEntries[0]?.type === "reload";
-    }
-
-    return performance.navigation?.type === 1;
-  };
-
   const clearAutoLogoutTimer = () => {
     if (autoLogoutTimer.current) {
       clearTimeout(autoLogoutTimer.current);
@@ -59,16 +48,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        if (isBrowserReload()) {
-          try {
-            await api.post(`/api/auth/logout`);
-          } catch (logoutError) {
-            // no-op: session may already be invalid server-side
-          }
-          clearClientSession();
-          return;
-        }
-
         const res = await api.get(`/api/auth/me`);
         setUser(res.data);
         // Restore or create session expiry

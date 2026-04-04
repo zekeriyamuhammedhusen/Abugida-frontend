@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Routes, Route, useNavigate, useLocation, useNavigationType } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
@@ -50,9 +50,7 @@ const MainLayout = ({ children }) => (
 
 const App = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const navigationType = useNavigationType();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     // Scroll to top on route load
@@ -78,26 +76,6 @@ const App = () => {
       disconnectSocket();
     };
   }, [navigate, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    if (navigationType !== "POP") return;
-
-    const path = location.pathname;
-    const isProtectedPath =
-      path === "/student-dashboard" ||
-      path === "/instructor-dashboard" ||
-      path === "/admin-dashboard" ||
-      path === "/approver-dashboard" ||
-      path === "/approver-applicants" ||
-      path === "/profile" ||
-      path.startsWith("/users/") ||
-      path.startsWith("/learn/");
-
-    if (!isProtectedPath) return;
-
-    logout({ silent: true, redirectToLogin: true });
-  }, [location.pathname, navigationType, user, logout]);
 
   return (
     <>
