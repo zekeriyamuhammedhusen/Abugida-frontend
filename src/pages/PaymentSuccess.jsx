@@ -62,10 +62,9 @@ const PaymentSuccess = () => {
     const verifyPayment = async () => {
       try {
         if (!txRef) throw new Error('Missing transaction reference');
-        if (!courseId) throw new Error('Missing course ID');
 
         const response = await api.get(`/api/payment/verify-payment/${txRef}`, {
-          params: { course_id: courseId },
+          params: courseId ? { course_id: courseId } : undefined,
           headers: { 'Cache-Control': 'no-cache' },
         });
 
@@ -108,13 +107,15 @@ const PaymentSuccess = () => {
       }
     };
 
-    if (txRef && courseId) {
+    if (txRef) {
       verifyPayment();
     } else {
-      setError(!txRef ? 'Transaction reference missing' : 'Course ID missing');
+      setError('Transaction reference missing');
       setLoading(false);
     }
   }, [courseId, txRef, status]);
+
+  const resolvedCourseId = courseId || payment?.courseId || payment?.courseId?._id || '';
 
   if (loading) {
     return <div className="text-center mt-10">Verifying your payment...</div>;
@@ -126,7 +127,7 @@ const PaymentSuccess = () => {
         <h1 className="text-2xl font-bold text-red-600">Payment Verification Failed</h1>
         <p className="text-red-500 mb-4">{error}</p>
         <div className="flex items-center justify-center gap-4">
-          <Button onClick={() => navigate(`/courses/${courseId}`)}>Retry Payment</Button>
+          <Button onClick={() => navigate(resolvedCourseId ? `/courses/${resolvedCourseId}` : '/courses')}>Retry Payment</Button>
           <Button variant="outline" onClick={() => navigate('/courses')}>Back to Courses</Button>
         </div>
       </div>
@@ -214,7 +215,7 @@ const PaymentSuccess = () => {
         <div className="flex gap-4">
           <Button 
             className="flex-1" 
-            onClick={() => navigate(`/courses/${courseId}`)}
+            onClick={() => navigate(resolvedCourseId ? `/courses/${resolvedCourseId}` : '/courses')}
           >
             Start Learning
           </Button>

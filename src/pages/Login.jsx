@@ -201,14 +201,9 @@ const handleSubmit = async (e) => {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-abugida-200 bg-abugida-50/70 p-4 text-sm text-slate-700 dark:border-abugida-900/40 dark:bg-abugida-950/20 dark:text-slate-200">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    
-                    <p className="mt-1 break-all">email: zakm01163@gmail.com </p>
-                    <p className="mt-1 text-xs text-muted-foreground">password: Abugida@12</p>
-                  </div>
-                </div>
+              <div className="text-sm text-slate-800 dark:text-slate-200">
+                <p className="break-all">Email: zakm01163@gmail.com</p>
+                <p className="break-all">Password: Abugida@12</p>
               </div>
 
               <div>
