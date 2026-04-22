@@ -12,6 +12,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from "../context/LanguageContext";
 import { useSocket } from "../context/SocketContext";
 
+
+
 const Login = () => {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
@@ -22,7 +24,7 @@ const Login = () => {
   const { login } = useAuth();
   const { t } = useLanguage();
   const socket = useSocket();
-  
+
   useEffect(() => {
     if (searchParams.get('blocked') === 'true') {
       toast.error('Your account has been blocked by the administrator');
@@ -196,6 +198,16 @@ const handleSubmit = async (e) => {
                   <Link to="/forgot-password" className="text-abugida-600 hover:text-abugida-500 font-medium">
                     {t("login.forgot")}
                   </Link>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-abugida-200 bg-abugida-50/70 p-4 text-sm text-slate-700 dark:border-abugida-900/40 dark:bg-abugida-950/20 dark:text-slate-200">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    
+                    <p className="mt-1 break-all">email: zakm01163@gmail.com </p>
+                    <p className="mt-1 text-xs text-muted-foreground">password: Abugida@12</p>
+                  </div>
                 </div>
               </div>
 
