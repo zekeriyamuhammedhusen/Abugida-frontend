@@ -58,6 +58,16 @@ export const InstructorTab = ({ courseId, studentId }) => {
     }
   };
 
+  const handleContactInstructor = () => {
+    const params = new URLSearchParams({
+      target: 'instructor',
+      instructor: instructorName,
+      email: instructorEmail || '',
+      courseId,
+    });
+    navigate(`/contact?${params.toString()}`);
+  };
+
   if (error) {
     return <div className="p-4 text-sm text-red-500">{error}</div>;
   }
@@ -91,12 +101,13 @@ export const InstructorTab = ({ courseId, studentId }) => {
 
           {isEnrolled && instructorEmail && (
             <>
-              <a
-                href={`mailto:${instructorEmail}`}
+              <button
+                type="button"
+                onClick={handleContactInstructor}
                 className="inline-block mt-3 mr-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Contact Instructor
-              </a>
+              </button>
               <button
                 onClick={handleStartConversation}
                 className="inline-block mt-3 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors"

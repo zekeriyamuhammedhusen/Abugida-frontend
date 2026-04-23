@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail,
@@ -26,6 +27,7 @@ import { useLanguage } from "@/context/LanguageContext";
 
 function Contact() {
   const { t } = useLanguage();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -33,6 +35,22 @@ function Contact() {
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const target = searchParams.get("target");
+    if (target !== "instructor") return;
+
+    const instructor = searchParams.get("instructor") || "Instructor";
+    const instructorEmail = searchParams.get("email") || "";
+
+    setFormData((prev) => ({
+      ...prev,
+      subject: prev.subject || "courses",
+      message:
+        prev.message ||
+        `I want to contact ${instructor}${instructorEmail ? ` (${instructorEmail})` : ""}.`,
+    }));
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData({
