@@ -10,9 +10,11 @@ import {
 import { ChevronRight, Plus } from "lucide-react";
 import { Edit, Trash2, Eye } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useNavigate } from "react-router-dom";
 
 const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, showActions = false, onEdit, onDelete }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
       <div className="flex justify-between items-center mb-4">
@@ -104,7 +106,11 @@ const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, sh
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => window.location.href = `/courses/${course._id || course.id}`}
+                            onClick={() => {
+                              const courseId = course._id || course.id;
+                              if (!courseId) return;
+                              navigate(`/courses/${courseId}`);
+                            }}
                           >
                             <Eye size={16} />
                           </Button>
