@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
@@ -50,7 +50,22 @@ const MainLayout = ({ children }) => (
 
 const App = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
+
+  useEffect(() => {
+    if (location.pathname !== "/") return;
+
+    const params = new URLSearchParams(location.search);
+    const payment = params.get("payment");
+    const course = params.get("course") || params.get("amp;course") || "";
+    const txRef = params.get("tx_ref") || params.get("amp;tx_ref") || "";
+
+    if (payment === "success" && txRef) {
+      const target = `/payment-success?course=${encodeURIComponent(course)}&tx_ref=${encodeURIComponent(txRef)}`;
+      navigate(target, { replace: true });
+    }
+  }, [location.pathname, location.search, navigate]);
 
   useEffect(() => {
     // Scroll to top on route load
